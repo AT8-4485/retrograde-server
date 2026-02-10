@@ -9,6 +9,13 @@ import {
   SpaceGrotesk_600SemiBold as spaceGroteskSemiBold,
   SpaceGrotesk_700Bold as spaceGroteskBold,
 } from "@expo-google-fonts/space-grotesk"
+import {
+  CormorantGaramond_300Light as cormorantGaramondLight,
+  CormorantGaramond_400Regular as cormorantGaramondRegular,
+  CormorantGaramond_500Medium as cormorantGaramondMedium,
+  CormorantGaramond_600SemiBold as cormorantGaramondSemiBold,
+  CormorantGaramond_700Bold as cormorantGaramondBold,
+} from "@expo-google-fonts/cormorant-garamond"
 
 export const customFontsToLoad = {
   spaceGroteskLight,
@@ -16,6 +23,11 @@ export const customFontsToLoad = {
   spaceGroteskMedium,
   spaceGroteskSemiBold,
   spaceGroteskBold,
+  cormorantGaramondLight,
+  cormorantGaramondRegular,
+  cormorantGaramondMedium,
+  cormorantGaramondSemiBold,
+  cormorantGaramondBold,
 }
 
 const fonts = {
@@ -26,6 +38,14 @@ const fonts = {
     medium: "spaceGroteskMedium",
     semiBold: "spaceGroteskSemiBold",
     bold: "spaceGroteskBold",
+  },
+  cormorantGaramond: {
+    // Cross-platform Google font.
+    light: "cormorantGaramondLight",
+    normal: "cormorantGaramondRegular",
+    medium: "cormorantGaramondMedium",
+    semiBold: "cormorantGaramondSemiBold",
+    bold: "cormorantGaramondBold",
   },
   helveticaNeue: {
     // iOS only font.
@@ -59,7 +79,7 @@ export const typography = {
   /**
    * The primary font. Used in most places.
    */
-  primary: fonts.spaceGrotesk,
+  primary: fonts.cormorantGaramond,
   /**
    * An alternate font used for perhaps titles and stuff.
    */
