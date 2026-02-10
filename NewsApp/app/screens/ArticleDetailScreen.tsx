@@ -11,6 +11,7 @@ import { getPost, Post } from "../services/api/wordpress"
 import { colors, spacing } from "../theme"
 import { AppStackParamList } from "../navigators/navigationTypes"
 import { format } from "date-fns"
+import { decodeHtmlEntities } from "../utils/decodeHtml"
 
 export const ArticleDetailScreen = ({
   route,
@@ -109,11 +110,7 @@ export const ArticleDetailScreen = ({
       <View style={$content}>
         <Text
           preset="heading"
-          text={post.title.rendered
-            .replace(/&#8217;/g, "'")
-            .replace(/&#8220;/g, '"')
-            .replace(/&#8221;/g, '"')
-            .replace(/&amp;/g, "&")}
+          text={decodeHtmlEntities(post.title.rendered)}
           style={$title}
         />
 

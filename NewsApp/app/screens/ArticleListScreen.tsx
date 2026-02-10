@@ -9,6 +9,7 @@ import { getPosts, Post } from "../services/api/wordpress"
 import { colors } from "../theme"
 import { AppStackParamList } from "../navigators/navigationTypes"
 import { format } from "date-fns"
+import { decodeHtmlEntities } from "../utils/decodeHtml"
 
 export const ArticleListScreen = ({
   navigation,
@@ -48,16 +49,9 @@ export const ArticleListScreen = ({
 
     const authorName = item._embedded?.author?.[0]?.name
 
-    // Decode HTML entities in title (simple replace for now, or rely on a library if needed)
-    // For MVP, we can rely on Text component handling some basic stuff or simple cleaning.
-    // wpapi returns HTML strings.
-    const heading = item.title.rendered
-      .replace(/&#8217;/g, "'")
-      .replace(/&#8220;/g, '"')
-      .replace(/&#8221;/g, '"')
-      .replace(/&amp;/g, "&")
-
-    const content = item.excerpt.rendered.replace(/<[^>]+>/g, "").trim().slice(0, 100) + "..."
+    // Decode HTML entities in title and excerpt
+    const heading = decodeHtmlEntities(item.title.rendered)
+    const content = decodeHtmlEntities(item.excerpt.rendered).trim().slice(0, 100) + "..."
 
     return (
       <Card
