@@ -20,8 +20,9 @@ export type AppStackParamList = {
   Welcome: undefined
   Login: undefined
   Demo: NavigatorScreenParams<DemoTabParamList>
-  ArticleList: undefined
+  ArticleList: { issueDate?: string } | undefined
   ArticleDetail: { postId: number; postData?: any } // Allow passing postData to avoid extra fetch
+  Archive: undefined
   // 🔥 Your screens go here
   // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
