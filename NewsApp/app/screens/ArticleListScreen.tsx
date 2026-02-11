@@ -1,22 +1,35 @@
-import React, { useEffect, useState } from "react"
-import { ActivityIndicator, TouchableOpacity, View, ViewStyle, TextStyle } from "react-native"
+import { useEffect, useState } from "react"
+import {
+  ActivityIndicator,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+  TextStyle,
+  ImageStyle,
+} from "react-native"
+import { DrawerScreenProps } from "@react-navigation/drawer"
+import { CompositeScreenProps } from "@react-navigation/native"
 import { NativeStackScreenProps } from "@react-navigation/native-stack"
-import { Screen } from "../components/Screen"
-import { Text } from "../components/Text"
-import { HeroArticle } from "../components/HeroArticle"
-import { ArticleMedium } from "../components/ArticleMedium"
-import { ArticleRow } from "../components/ArticleRow"
-import { SectionHeader } from "../components/SectionHeader"
-import { Separator } from "../components/Separator"
-import { getLatestIssue, getPostsByDate, Post } from "../services/api/wordpress"
-import { colors, spacing, typography } from "../theme"
-import { AppStackParamList } from "../navigators/navigationTypes"
 import { format } from "date-fns"
 
-export const ArticleListScreen = ({
-  navigation,
-  route,
-}: NativeStackScreenProps<AppStackParamList, "ArticleList">) => {
+import { ArticleMedium } from "../components/ArticleMedium"
+import { ArticleRow } from "../components/ArticleRow"
+import { HeroArticle } from "../components/HeroArticle"
+import { Icon } from "../components/Icon"
+import { Screen } from "../components/Screen"
+import { SectionHeader } from "../components/SectionHeader"
+import { Separator } from "../components/Separator"
+import { Text } from "../components/Text"
+import { AppStackParamList, DrawerParamList } from "../navigators/navigationTypes"
+import { getLatestIssue, getPostsByDate, Post } from "../services/api/wordpress"
+import { colors, spacing, typography } from "../theme"
+
+type ArticleListScreenProps = CompositeScreenProps<
+  DrawerScreenProps<DrawerParamList, "ArticleList">,
+  NativeStackScreenProps<AppStackParamList>
+>
+
+export const ArticleListScreen = ({ navigation, route }: ArticleListScreenProps) => {
   const [loading, setLoading] = useState(false)
   const [issue, setIssue] = useState<Post | null>(null)
 
@@ -30,6 +43,7 @@ export const ArticleListScreen = ({
 
   useEffect(() => {
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.params])
 
   const fetchData = async () => {
@@ -130,13 +144,14 @@ export const ArticleListScreen = ({
     >
       {/* Header */}
       <View style={$headerContainer}>
+        <TouchableOpacity onPress={() => navigation.toggleDrawer()} style={$menuButton}>
+          <Icon icon="menu" size={24} color={colors.text} />
+        </TouchableOpacity>
         <Text preset="heading" text="The Retrograde" style={$masthead} />
         {issue && (
           <>
             <View style={$subtitleSeparator} />
-            <Text style={$issueDate}>
-              {`Issue ${format(new Date(issue.date), "MM/dd/yyyy")}`}
-            </Text>
+            <Text style={$issueDate}>{`Issue ${format(new Date(issue.date), "MM/dd/yyyy")}`}</Text>
           </>
         )}
       </View>
@@ -197,11 +212,7 @@ export const ArticleListScreen = ({
           <SectionHeader title="Comics & Activities" />
           {comicsPosts.map((post) => (
             <View key={post.id}>
-              <ArticleMedium
-                post={post}
-                onPress={navigateToArticle}
-                imageStyle={{ width: 120, height: 120 }}
-              />
+              <ArticleMedium post={post} onPress={navigateToArticle} imageStyle={$comicsImage} />
               <Separator />
             </View>
           ))}
@@ -228,6 +239,14 @@ const $headerContainer: ViewStyle = {
   paddingVertical: spacing.md,
   alignItems: "center",
   backgroundColor: colors.background,
+  position: "relative",
+}
+
+const $menuButton: ViewStyle = {
+  position: "absolute",
+  left: spacing.md,
+  top: spacing.md,
+  zIndex: 1,
 }
 
 const $masthead: TextStyle = {
@@ -268,4 +287,9 @@ const $footerLink: TextStyle = {
   fontFamily: typography.primary.semiBold,
   fontSize: 18,
   color: colors.palette.primary500,
+}
+
+const $comicsImage: ImageStyle = {
+  width: 120,
+  height: 120,
 }

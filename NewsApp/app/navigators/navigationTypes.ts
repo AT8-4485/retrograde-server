@@ -15,14 +15,24 @@ export type DemoTabParamList = {
   DemoPodcastList: undefined
 }
 
+export type DrawerParamList = {
+  ArticleList: { issueDate?: string } | undefined
+  News: { categoryIds: number[]; title: string }
+  Opinion: { categoryIds: number[]; title: string }
+  LifeArts: { categoryIds: number[]; title: string }
+  Comics: { categoryIds: number[]; title: string }
+  AllPosts: { categoryIds: number[]; title: string }
+  Archive: undefined
+  About: undefined
+}
+
 // App Stack Navigator types
 export type AppStackParamList = {
   Welcome: undefined
   Login: undefined
   Demo: NavigatorScreenParams<DemoTabParamList>
-  ArticleList: { issueDate?: string } | undefined
+  Drawer: NavigatorScreenParams<DrawerParamList>
   ArticleDetail: { postId: number; postData?: any } // Allow passing postData to avoid extra fetch
-  Archive: undefined
   // 🔥 Your screens go here
   // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }

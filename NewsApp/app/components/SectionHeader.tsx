@@ -1,5 +1,6 @@
 import React from "react"
 import { TextStyle, View, ViewStyle } from "react-native"
+
 import { Text } from "./Text"
 import { colors, spacing, typography } from "../theme"
 
