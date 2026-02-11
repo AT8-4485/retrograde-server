@@ -34,8 +34,12 @@ export const ArchiveScreen = ({
         setIssues((prev) => [...prev, ...newIssues])
         setPage((prev) => prev + 1)
       }
-    } catch (error) {
-      console.error(error)
+    } catch (error: any) {
+      if (error.code === "rest_post_invalid_page_number") {
+        setHasMore(false)
+      } else {
+        console.error(error.message || error)
+      }
     } finally {
       setLoading(false)
     }

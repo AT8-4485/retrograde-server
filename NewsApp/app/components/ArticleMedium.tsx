@@ -25,7 +25,7 @@ export const ArticleMedium = ({
 
   let categoryName = ""
   if (showCategory && post._embedded?.["wp:term"]?.[0]?.[0]) {
-    categoryName = post._embedded["wp:term"][0][0].name
+    categoryName = decodeHtmlEntities(post._embedded["wp:term"][0][0].name)
   }
 
   const metadata = categoryName ? `${categoryName} • ${date}` : date
