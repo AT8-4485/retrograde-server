@@ -30,21 +30,31 @@ export const ArticleDetailScreen = ({
   const { postId, postData } = route.params
   const [post, setPost] = useState<Post | undefined>(postData)
   const [loading, setLoading] = useState(!postData)
+  const [error, setError] = useState<string | null>(null)
   const { width } = useWindowDimensions()
 
   useEffect(() => {
     if (!post) {
       fetchPost()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId])
 
   const fetchPost = async () => {
     setLoading(true)
+    setError(null)
     try {
-      const fetchedPost = await getPost(postId)
-      setPost(fetchedPost)
-    } catch (error) {
-      console.error(error)
+      const result = await getPost(postId)
+      if (result.kind === "ok") {
+        setPost(result.post)
+      } else if (result.kind === "not-found") {
+        setError("Article not found.")
+      } else {
+        setError("Unable to load article.")
+      }
+    } catch (e) {
+      console.error(e)
+      setError("An unexpected error occurred.")
     } finally {
       setLoading(false)
     }
@@ -74,10 +84,20 @@ export const ArticleDetailScreen = ({
     )
   }
 
+  if (error) {
+    return (
+      <Screen preset="fixed" contentContainerStyle={$errorContainer}>
+        <Text text={error} style={$errorText} />
+        <Button text="Go Back" onPress={() => navigation.goBack()} preset="filled" />
+      </Screen>
+    )
+  }
+
   if (!post) {
     return (
-      <Screen preset="fixed" contentContainerStyle={$screenContentContainer}>
-        <Text text="Article not found" />
+      <Screen preset="fixed" contentContainerStyle={$errorContainer}>
+        <Text text="Article not found" style={$errorText} />
+        <Button text="Go Back" onPress={() => navigation.goBack()} preset="filled" />
       </Screen>
     )
   }
@@ -153,6 +173,21 @@ export const ArticleDetailScreen = ({
 const $screenContentContainer: ViewStyle = {
   paddingBottom: spacing.xl,
   backgroundColor: colors.background,
+}
+
+const $errorContainer: ViewStyle = {
+  flex: 1,
+  justifyContent: "center",
+  alignItems: "center",
+  padding: spacing.lg,
+  backgroundColor: colors.background,
+}
+
+const $errorText: TextStyle = {
+  marginBottom: spacing.md,
+  color: colors.error,
+  textAlign: "center",
+  fontSize: 18,
 }
 
 const $header: ViewStyle = {
