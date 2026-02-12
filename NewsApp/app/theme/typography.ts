@@ -53,6 +53,15 @@ const fonts = {
     light: "HelveticaNeue-Light",
     normal: "Helvetica Neue",
     medium: "HelveticaNeue-Medium",
+    bold: "HelveticaNeue-Bold",
+  },
+  system: {
+    // System font
+    light: "System",
+    normal: "System",
+    medium: "System",
+    semiBold: "System",
+    bold: "System",
   },
   courier: {
     // iOS only font.
@@ -64,6 +73,8 @@ const fonts = {
     light: "sans-serif-light",
     normal: "sans-serif",
     medium: "sans-serif-medium",
+    semiBold: "sans-serif-medium",
+    bold: "sans-serif-medium", // Android bold is often handled by fontWeight
   },
   monospace: {
     // Android only font.
@@ -77,13 +88,13 @@ export const typography = {
    */
   fonts,
   /**
-   * The primary font. Used in most places.
+   * The primary font. Used in most places (Content).
    */
   primary: fonts.cormorantGaramond,
   /**
-   * An alternate font used for perhaps titles and stuff.
+   * An alternate font used for UI elements (Headers, Buttons, etc).
    */
-  secondary: Platform.select({ ios: fonts.helveticaNeue, android: fonts.sansSerif }),
+  secondary: Platform.select({ ios: fonts.system, android: fonts.sansSerif }),
   /**
    * Lets get fancy with a monospace font!
    */

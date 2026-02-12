@@ -13,6 +13,7 @@ import { translate } from "@/i18n/translate"
 import { useAppTheme } from "@/theme/context"
 import { $styles } from "@/theme/styles"
 import type { ThemedStyle } from "@/theme/types"
+import { typography } from "@/theme/typography"
 import { ExtendedEdge, useSafeAreaInsetsStyle } from "@/utils/useSafeAreaInsetsStyle"
 
 import { IconTypes, PressableIcon } from "./Icon"
@@ -284,6 +285,7 @@ const $container: ViewStyle = {
 
 const $title: TextStyle = {
   textAlign: "center",
+  fontFamily: typography.secondary?.bold,
 }
 
 const $actionTextContainer: ThemedStyle<ViewStyle> = ({ spacing }) => ({

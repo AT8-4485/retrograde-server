@@ -11,7 +11,12 @@ interface AboutScreenProps extends DrawerScreenProps<any, "About"> {}
 export const AboutScreen = ({ navigation }: AboutScreenProps) => {
   return (
     <Screen preset="scroll" safeAreaEdges={["top"]} contentContainerStyle={$screenContentContainer}>
-      <Header title="About" leftIcon="menu" onLeftPress={() => navigation.toggleDrawer()} />
+      <Header
+        title="About"
+        leftIcon="menu"
+        onLeftPress={() => navigation.toggleDrawer()}
+        safeAreaEdges={[]}
+      />
       <Text preset="heading" text="About The Retrograde" style={$heading} />
       <Text style={$content}>
         The Retrograde is a student-run newspaper dedicated to providing news and opinion for the

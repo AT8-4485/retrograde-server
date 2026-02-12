@@ -27,7 +27,7 @@ const $container: ViewStyle = {
 }
 
 const $text: TextStyle = {
-  fontFamily: typography.fonts.spaceGrotesk.medium,
+  fontFamily: typography.secondary?.medium,
   fontSize: 11,
   letterSpacing: 1.5,
   color: colors.palette.neutral600,

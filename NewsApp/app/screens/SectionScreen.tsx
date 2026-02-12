@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { ActivityIndicator, FlatList, View, ViewStyle } from "react-native"
 import { DrawerScreenProps } from "@react-navigation/drawer"
 
-import { ArticleRow } from "../components/ArticleRow"
+import { ArticleMedium } from "../components/ArticleMedium"
 import { Header } from "../components/Header"
 import { Screen } from "../components/Screen"
 import { Separator } from "../components/Separator"
@@ -65,7 +65,7 @@ export const SectionScreen = ({ navigation, route }: SectionScreenProps) => {
 
   const renderItem = ({ item }: { item: Post }) => (
     <View>
-      <ArticleRow
+      <ArticleMedium
         post={item}
         onPress={() => navigation.navigate("ArticleDetail", { postId: item.id, postData: item })}
       />
@@ -75,7 +75,12 @@ export const SectionScreen = ({ navigation, route }: SectionScreenProps) => {
 
   return (
     <Screen preset="fixed" safeAreaEdges={["top"]} contentContainerStyle={$screenContentContainer}>
-      <Header title={title} leftIcon="menu" onLeftPress={() => navigation.toggleDrawer()} />
+      <Header
+        title={title}
+        leftIcon="menu"
+        onLeftPress={() => navigation.toggleDrawer()}
+        safeAreaEdges={[]}
+      />
       <FlatList
         data={posts}
         renderItem={renderItem}
