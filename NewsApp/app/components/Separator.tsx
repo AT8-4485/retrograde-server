@@ -1,5 +1,6 @@
 import React from "react"
 import { View, ViewStyle } from "react-native"
+
 import { colors, spacing } from "../theme"
 
 export const Separator = () => <View style={$separator} />

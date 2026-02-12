@@ -1,19 +1,34 @@
-import React, { useEffect, useState } from "react"
-import { ActivityIndicator, FlatList, ImageStyle, TextStyle, TouchableOpacity, View, ViewStyle } from "react-native"
+import { useEffect, useState } from "react"
+import {
+  ActivityIndicator,
+  FlatList,
+  ImageStyle,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native"
+import { DrawerScreenProps } from "@react-navigation/drawer"
+import { CompositeScreenProps } from "@react-navigation/native"
 import { NativeStackScreenProps } from "@react-navigation/native-stack"
-import { Screen } from "../components/Screen"
-import { Text } from "../components/Text"
+import { format } from "date-fns"
+
 import { AutoImage } from "../components/AutoImage"
+import { Icon } from "../components/Icon"
+import { Screen } from "../components/Screen"
 import { Separator } from "../components/Separator"
+import { Text } from "../components/Text"
+import { AppStackParamList, DrawerParamList } from "../navigators/navigationTypes"
 import { getIssues, Post } from "../services/api/wordpress"
 import { colors, spacing, typography } from "../theme"
-import { AppStackParamList } from "../navigators/navigationTypes"
-import { format } from "date-fns"
 import { decodeHtmlEntities } from "../utils/decodeHtml"
 
-export const ArchiveScreen = ({
-  navigation,
-}: NativeStackScreenProps<AppStackParamList, "Archive">) => {
+type ArchiveScreenProps = CompositeScreenProps<
+  DrawerScreenProps<DrawerParamList, "Archive">,
+  NativeStackScreenProps<AppStackParamList>
+>
+
+export const ArchiveScreen = ({ navigation }: ArchiveScreenProps) => {
   const [issues, setIssues] = useState<Post[]>([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -21,6 +36,7 @@ export const ArchiveScreen = ({
 
   useEffect(() => {
     fetchIssues()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchIssues = async () => {
@@ -77,8 +93,8 @@ export const ArchiveScreen = ({
       contentContainerStyle={$screenContentContainer}
     >
       <View style={$headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={$backButton}>
-             <Text text="←" style={$backText} />
+        <TouchableOpacity onPress={() => navigation.toggleDrawer()} style={$menuButton}>
+          <Icon icon="menu" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text preset="heading" text="Past Issues" style={$headerText} />
       </View>
@@ -117,13 +133,8 @@ const $headerContainer: ViewStyle = {
   backgroundColor: colors.background,
 }
 
-const $backButton: ViewStyle = {
-    paddingRight: spacing.md,
-}
-
-const $backText: TextStyle = {
-    fontSize: 24,
-    color: colors.text,
+const $menuButton: ViewStyle = {
+  paddingRight: spacing.md,
 }
 
 const $headerText: TextStyle = {

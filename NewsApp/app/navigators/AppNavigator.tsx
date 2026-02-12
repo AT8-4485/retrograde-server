@@ -8,9 +8,8 @@ import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 
 import Config from "@/config"
-import { ArchiveScreen } from "@/screens/ArchiveScreen"
+import { DrawerNavigator } from "@/navigators/DrawerNavigator"
 import { ArticleDetailScreen } from "@/screens/ArticleDetailScreen"
-import { ArticleListScreen } from "@/screens/ArticleListScreen"
 import { ErrorBoundary } from "@/screens/ErrorScreen/ErrorBoundary"
 import { useAppTheme } from "@/theme/context"
 
@@ -41,9 +40,8 @@ const AppStack = () => {
         },
       }}
     >
-      <Stack.Screen name="ArticleList" component={ArticleListScreen} />
+      <Stack.Screen name="Drawer" component={DrawerNavigator} />
       <Stack.Screen name="ArticleDetail" component={ArticleDetailScreen} />
-      <Stack.Screen name="Archive" component={ArchiveScreen} />
       {/** 🔥 Your screens go here */}
       {/* IGNITE_GENERATOR_ANCHOR_APP_STACK_SCREENS */}
     </Stack.Navigator>

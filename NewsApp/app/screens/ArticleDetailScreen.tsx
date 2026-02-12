@@ -1,16 +1,26 @@
 import React, { useEffect, useState } from "react"
-import { ActivityIndicator, ScrollView, View, ViewStyle, TextStyle, ImageStyle, useWindowDimensions, Share } from "react-native"
+import {
+  ActivityIndicator,
+  ScrollView,
+  View,
+  ViewStyle,
+  TextStyle,
+  ImageStyle,
+  useWindowDimensions,
+  Share,
+} from "react-native"
 import { NativeStackScreenProps } from "@react-navigation/native-stack"
+import { format } from "date-fns"
 import RenderHtml from "react-native-render-html"
+
+import { AutoImage } from "../components/AutoImage"
+import { Button } from "../components/Button"
+import { Icon } from "../components/Icon"
 import { Screen } from "../components/Screen"
 import { Text } from "../components/Text"
-import { AutoImage } from "../components/AutoImage"
-import { Icon } from "../components/Icon"
-import { Button } from "../components/Button"
+import { AppStackParamList } from "../navigators/navigationTypes"
 import { getPost, Post } from "../services/api/wordpress"
 import { colors, spacing } from "../theme"
-import { AppStackParamList } from "../navigators/navigationTypes"
-import { format } from "date-fns"
 import { decodeHtmlEntities } from "../utils/decodeHtml"
 
 export const ArticleDetailScreen = ({
@@ -108,15 +118,20 @@ export const ArticleDetailScreen = ({
       </View>
 
       <View style={$content}>
-        <Text
-          preset="heading"
-          text={decodeHtmlEntities(post.title.rendered)}
-          style={$title}
-        />
+        <Text preset="heading" text={decodeHtmlEntities(post.title.rendered)} style={$title} />
 
         <View style={$meta}>
-          {authorName && <Text size="xs" style={$metaText}>{authorName}</Text>}
-          {authorName && <Text size="xs" style={$metaText}> • </Text>}
+          {authorName && (
+            <Text size="xs" style={$metaText}>
+              {authorName}
+            </Text>
+          )}
+          {authorName && (
+            <Text size="xs" style={$metaText}>
+              {" "}
+              •{" "}
+            </Text>
+          )}
           <Text size="xs" style={$metaText}>
             {format(new Date(post.date), "MMMM dd, yyyy")}
           </Text>

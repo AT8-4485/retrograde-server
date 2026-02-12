@@ -1,8 +1,9 @@
 import React from "react"
 import { TextStyle, TouchableOpacity, View, ViewStyle } from "react-native"
 import { format } from "date-fns"
-import { Post } from "../services/api/wordpress"
+
 import { Text } from "./Text"
+import { Post } from "../services/api/wordpress"
 import { colors, spacing, typography } from "../theme"
 import { decodeHtmlEntities } from "../utils/decodeHtml"
 

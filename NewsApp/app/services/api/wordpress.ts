@@ -1,5 +1,5 @@
-import WPAPI from "wpapi"
 import { startOfDay, endOfDay, formatISO } from "date-fns"
+import WPAPI from "wpapi"
 
 // Initialize WPAPI with the endpoint
 const wp = new WPAPI({ endpoint: "https://retrogradenews.com/wp-json" })
@@ -27,7 +27,7 @@ export interface Post {
         }
       }
     }>
-    author?: Array<{
+    "author"?: Array<{
       name: string
       avatar_urls?: {
         "24"?: string
@@ -59,6 +59,36 @@ export const getPosts = async (page = 1, perPage = 10): Promise<Post[]> => {
     return posts
   } catch (error) {
     console.error("Error fetching posts:", error)
+    throw error
+  }
+}
+
+/**
+ * Fetches posts filtered by category IDs.
+ * @param categoryIds Array of category IDs to include. If null or empty, fetches all posts (excluding issues).
+ * @param page The page number.
+ * @param perPage Number of posts per page.
+ * @returns A promise resolving to an array of posts.
+ */
+export const getPostsByCategory = async (
+  categoryIds: number[] | null,
+  page = 1,
+  perPage = 10,
+): Promise<Post[]> => {
+  try {
+    let request = wp.posts().page(page).perPage(perPage).embed()
+
+    if (categoryIds && categoryIds.length > 0) {
+      request = request.categories(categoryIds)
+    }
+
+    // Always exclude the issue container category (1407) to avoid showing "Issue X" as a post
+    request = request.excludeCategories([1407])
+
+    const posts = await request
+    return posts
+  } catch (error) {
+    console.error("Error fetching posts by category:", error)
     throw error
   }
 }
