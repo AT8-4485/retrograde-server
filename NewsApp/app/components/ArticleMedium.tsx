@@ -51,7 +51,7 @@ export const ArticleMedium = ({
 const $container: ViewStyle = {
   flexDirection: "row",
   paddingVertical: spacing.md,
-  paddingHorizontal: spacing.md,
+  paddingHorizontal: 3, // TODO: fix this
   alignItems: "flex-start",
 }
 
