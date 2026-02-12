@@ -21,7 +21,7 @@ export const DrawerNavigator = () => {
         drawerActiveTintColor: colors.palette.primary500,
         drawerInactiveTintColor: colors.text,
         drawerLabelStyle: {
-          fontFamily: typography.primary.medium,
+          fontFamily: typography.secondary.regular,
           fontSize: 18,
         },
         drawerStyle: {
