@@ -34,24 +34,30 @@ export const SectionScreen = ({ navigation, route }: SectionScreenProps) => {
     setLoading(true)
     try {
       // If categoryIds is empty or null, getPostsByCategory handles "All Posts" logic internally
-      const newPosts = await getPostsByCategory(categoryIds, pageNum)
+      const result = await getPostsByCategory(categoryIds, pageNum)
 
-      if (newPosts.length === 0) {
-        setHasMore(false)
-      } else {
-        setPosts((prev) => (reset ? newPosts : [...prev, ...newPosts]))
-        // Assuming perPage is 10 (default in api service)
-        if (newPosts.length < 10) {
+      if (result.kind === "ok") {
+        const newPosts = result.posts
+
+        if (newPosts.length === 0) {
           setHasMore(false)
-        }
-        if (!reset) {
-          setPage(pageNum + 1)
         } else {
-          setPage(2)
+          setPosts((prev) => (reset ? newPosts : [...prev, ...newPosts]))
+          // Assuming perPage is 10 (default in api service)
+          if (newPosts.length < 10) {
+            setHasMore(false)
+          }
+          if (!reset) {
+            setPage(pageNum + 1)
+          } else {
+            setPage(2)
+          }
         }
+      } else {
+          console.error("Error fetching section posts:", result.kind)
       }
     } catch (error) {
-      console.error(error)
+      console.error("Unexpected error:", error)
     } finally {
       setLoading(false)
     }

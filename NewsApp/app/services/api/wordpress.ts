@@ -1,8 +1,6 @@
 import { startOfDay, endOfDay, formatISO } from "date-fns"
-import WPAPI from "wpapi"
-
-// Initialize WPAPI with the endpoint
-const wp = new WPAPI({ endpoint: "https://retrogradenews.com/wp-json" })
+import { api } from "./index"
+import { GeneralApiProblem, getGeneralApiProblem } from "./apiProblem"
 
 export interface Post {
   id: number
@@ -46,21 +44,30 @@ export interface Post {
   }
 }
 
+export type GetPostsResult = { kind: "ok"; posts: Post[] } | GeneralApiProblem
+export type GetPostResult = { kind: "ok"; post: Post } | GeneralApiProblem
+export type GetLatestIssueResult = { kind: "ok"; post: Post | null } | GeneralApiProblem
+
 /**
  * Fetches a list of posts from the WordPress API.
  * @param page The page number to fetch.
  * @param perPage The number of posts per page.
- * @returns A promise that resolves to an array of posts.
+ * @returns A promise that resolves to a result object.
  */
-export const getPosts = async (page = 1, perPage = 10): Promise<Post[]> => {
-  try {
-    // wp.posts() returns a request object. calling .embed() adds the _embed param.
-    const posts = await wp.posts().page(page).perPage(perPage).embed()
-    return posts
-  } catch (error) {
-    console.error("Error fetching posts:", error)
-    throw error
+export const getPosts = async (page = 1, perPage = 10): Promise<GetPostsResult> => {
+  const response = await api.apisauce.get<Post[]>("/wp/v2/posts", {
+    page,
+    per_page: perPage,
+    _embed: true,
+  })
+
+  if (!response.ok) {
+    const problem = getGeneralApiProblem(response)
+    if (problem) return problem
   }
+
+  const posts = response.data
+  return { kind: "ok", posts: posts || [] }
 }
 
 /**
@@ -68,101 +75,124 @@ export const getPosts = async (page = 1, perPage = 10): Promise<Post[]> => {
  * @param categoryIds Array of category IDs to include. If null or empty, fetches all posts (excluding issues).
  * @param page The page number.
  * @param perPage Number of posts per page.
- * @returns A promise resolving to an array of posts.
+ * @returns A promise resolving to a result object.
  */
 export const getPostsByCategory = async (
   categoryIds: number[] | null,
   page = 1,
   perPage = 10,
-): Promise<Post[]> => {
-  try {
-    let request = wp.posts().page(page).perPage(perPage).embed()
-
-    if (categoryIds && categoryIds.length > 0) {
-      request = request.categories(categoryIds)
-    }
-
-    // Always exclude the issue container category (1407) to avoid showing "Issue X" as a post
-    request = request.excludeCategories([1407])
-
-    const posts = await request
-    return posts
-  } catch (error) {
-    console.error("Error fetching posts by category:", error)
-    throw error
+): Promise<GetPostsResult> => {
+  const params: Record<string, any> = {
+    page,
+    per_page: perPage,
+    _embed: true,
+    categories_exclude: 1407, // Always exclude the issue container category
   }
+
+  if (categoryIds && categoryIds.length > 0) {
+    params.categories = categoryIds.join(",")
+  }
+
+  const response = await api.apisauce.get<Post[]>("/wp/v2/posts", params)
+
+  if (!response.ok) {
+    const problem = getGeneralApiProblem(response)
+    if (problem) return problem
+  }
+
+  const posts = response.data
+  return { kind: "ok", posts: posts || [] }
 }
 
 /**
  * Fetches a single post by ID.
  * @param id The ID of the post to fetch.
- * @returns A promise that resolves to the post.
+ * @returns A promise that resolves to a result object.
  */
-export const getPost = async (id: number): Promise<Post> => {
-  try {
-    const post = await wp.posts().id(id).embed()
-    return post
-  } catch (error) {
-    console.error("Error fetching post:", error)
-    throw error
+export const getPost = async (id: number): Promise<GetPostResult> => {
+  const response = await api.apisauce.get<Post>(`/wp/v2/posts/${id}`, { _embed: true })
+
+  if (!response.ok) {
+    const problem = getGeneralApiProblem(response)
+    if (problem) return problem
   }
+
+  const post = response.data
+  if (!post) {
+      return { kind: "not-found" }
+  }
+  return { kind: "ok", post }
 }
 
 /**
  * Fetches the latest issue post (from category 1407).
  * @returns A promise that resolves to the latest issue post or null.
  */
-export const getLatestIssue = async (): Promise<Post | null> => {
-  try {
-    const posts = await wp.posts().categories(1407).perPage(1).embed()
-    if (posts.length > 0) {
-      return posts[0]
-    }
-    return null
-  } catch (error) {
-    console.error("Error fetching latest issue:", error)
-    throw error
+export const getLatestIssue = async (): Promise<GetLatestIssueResult> => {
+  const response = await api.apisauce.get<Post[]>("/wp/v2/posts", {
+    categories: 1407,
+    per_page: 1,
+    _embed: true,
+  })
+
+  if (!response.ok) {
+    const problem = getGeneralApiProblem(response)
+    if (problem) return problem
   }
+
+  const posts = response.data
+  if (posts && posts.length > 0) {
+    return { kind: "ok", post: posts[0] }
+  }
+  return { kind: "ok", post: null }
 }
 
 /**
  * Fetches all posts for a specific issue date.
  * @param dateString The date string of the issue.
- * @returns A promise that resolves to an array of posts for that day.
+ * @returns A promise that resolves to a result object with posts for that day.
  */
-export const getPostsByDate = async (dateString: string): Promise<Post[]> => {
-  try {
-    const date = new Date(dateString)
-    const after = formatISO(startOfDay(date))
-    const before = formatISO(endOfDay(date))
+export const getPostsByDate = async (dateString: string): Promise<GetPostsResult> => {
+  const date = new Date(dateString)
+  const after = formatISO(startOfDay(date))
+  const before = formatISO(endOfDay(date))
 
-    const posts = await wp
-      .posts()
-      .after(after)
-      .before(before)
-      .excludeCategories([1407]) // Exclude the issue post itself
-      .perPage(100) // Get all posts for the issue
-      .embed()
+  const response = await api.apisauce.get<Post[]>("/wp/v2/posts", {
+    after,
+    before,
+    categories_exclude: 1407, // Exclude the issue post itself
+    per_page: 100, // Get all posts for the issue
+    _embed: true,
+  })
 
-    return posts
-  } catch (error) {
-    console.error("Error fetching posts by date:", error)
-    throw error
+  if (!response.ok) {
+    const problem = getGeneralApiProblem(response)
+    if (problem) return problem
   }
+
+  const posts = response.data
+  return { kind: "ok", posts: posts || [] }
 }
 
 /**
  * Fetches a list of issue posts (from category 1407).
  * @param page The page number to fetch.
  * @param perPage The number of posts per page.
- * @returns A promise that resolves to an array of issue posts.
+ * @returns A promise that resolves to a result object.
  */
-export const getIssues = async (page = 1, perPage = 10): Promise<Post[]> => {
-  try {
-    const posts = await wp.posts().categories(1407).page(page).perPage(perPage).embed()
-    return posts
-  } catch (error) {
-    console.error("Error fetching issues:", error)
-    throw error
+export const getIssues = async (page = 1, perPage = 10): Promise<GetPostsResult> => {
+  const response = await api.apisauce.get<Post[]>("/wp/v2/posts", {
+    categories: 1407,
+    page,
+    per_page: perPage,
+    _embed: true,
+  })
+
+  if (!response.ok) {
+    const problem = getGeneralApiProblem(response)
+    if (problem) return problem
   }
+
+  const posts = response.data
+  return { kind: "ok", posts: posts || [] }
 }

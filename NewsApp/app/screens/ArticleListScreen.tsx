@@ -20,6 +20,7 @@ import { Screen } from "../components/Screen"
 import { SectionHeader } from "../components/SectionHeader"
 import { Separator } from "../components/Separator"
 import { Text } from "../components/Text"
+import { Button } from "../components/Button"
 import { AppStackParamList, DrawerParamList } from "../navigators/navigationTypes"
 import { getLatestIssue, getPostsByDate, Post } from "../services/api/wordpress"
 import { colors, spacing, typography } from "../theme"
@@ -31,6 +32,7 @@ type ArticleListScreenProps = CompositeScreenProps<
 
 export const ArticleListScreen = ({ navigation, route }: ArticleListScreenProps) => {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [issue, setIssue] = useState<Post | null>(null)
 
   // Sections
@@ -48,6 +50,7 @@ export const ArticleListScreen = ({ navigation, route }: ArticleListScreenProps)
 
   const fetchData = async () => {
     setLoading(true)
+    setError(null)
     try {
       let targetDate = route.params?.issueDate
       let issuePost: Post | null = null
@@ -58,27 +61,41 @@ export const ArticleListScreen = ({ navigation, route }: ArticleListScreenProps)
         issuePost = { date: targetDate } as Post
       } else {
         // No date provided, fetch the latest issue post
-        issuePost = await getLatestIssue()
-        if (issuePost) {
-          targetDate = issuePost.date
+        const issueResult = await getLatestIssue()
+        if (issueResult.kind === "ok") {
+          issuePost = issueResult.post
+          if (issuePost) {
+            targetDate = issuePost.date
+          }
+        } else {
+          setError("Unable to load the latest issue.")
+          setLoading(false)
+          return
         }
       }
 
       if (issuePost && targetDate) {
         setIssue(issuePost)
-        const allPosts = await getPostsByDate(targetDate)
+        const postsResult = await getPostsByDate(targetDate)
 
-        // Filter and distribute posts
-        const posts = distributePosts(allPosts)
-        setHeroPost(posts.heroPost)
-        setOpinionPosts(posts.opinionPosts)
-        setLifeArtsPosts(posts.lifeArtsPosts)
-        setComicsPosts(posts.comicsPosts)
-        setMainTopPosts(posts.mainPosts.slice(0, 3))
-        setMainBottomPosts(posts.mainPosts.slice(3))
+        if (postsResult.kind === "ok") {
+          // Filter and distribute posts
+          const posts = distributePosts(postsResult.posts)
+          setHeroPost(posts.heroPost)
+          setOpinionPosts(posts.opinionPosts)
+          setLifeArtsPosts(posts.lifeArtsPosts)
+          setComicsPosts(posts.comicsPosts)
+          setMainTopPosts(posts.mainPosts.slice(0, 3))
+          setMainBottomPosts(posts.mainPosts.slice(3))
+        } else {
+          setError("Unable to load articles.")
+        }
+      } else if (!issuePost && !route.params?.issueDate) {
+        setError("No latest issue found.")
       }
-    } catch (error) {
-      console.error(error)
+    } catch (e) {
+      console.error(e)
+      setError("An unexpected error occurred.")
     } finally {
       setLoading(false)
     }
@@ -132,6 +149,15 @@ export const ArticleListScreen = ({ navigation, route }: ArticleListScreenProps)
     return (
       <View style={$loader}>
         <ActivityIndicator color={colors.palette.primary500} />
+      </View>
+    )
+  }
+
+  if (error) {
+    return (
+      <View style={$errorContainer}>
+        <Text text={error} style={$errorText} />
+        <Button text="Retry" onPress={fetchData} preset="filled" />
       </View>
     )
   }
@@ -276,6 +302,20 @@ const $loader: ViewStyle = {
   justifyContent: "center",
   alignItems: "center",
   paddingVertical: 20,
+}
+
+const $errorContainer: ViewStyle = {
+  flex: 1,
+  justifyContent: "center",
+  alignItems: "center",
+  padding: spacing.lg,
+  backgroundColor: colors.background,
+}
+
+const $errorText: TextStyle = {
+  marginBottom: spacing.md,
+  color: colors.error,
+  textAlign: "center",
 }
 
 const $footer: ViewStyle = {

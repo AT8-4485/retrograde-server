@@ -43,19 +43,25 @@ export const ArchiveScreen = ({ navigation }: ArchiveScreenProps) => {
     if (loading || (!hasMore && page > 1)) return
     setLoading(true)
     try {
-      const newIssues = await getIssues(page)
-      if (newIssues.length === 0) {
-        setHasMore(false)
+      const result = await getIssues(page)
+      if (result.kind === "ok") {
+        const newIssues = result.posts
+        if (newIssues.length === 0) {
+          setHasMore(false)
+        } else {
+          setIssues((prev) => [...prev, ...newIssues])
+          setPage((prev) => prev + 1)
+        }
       } else {
-        setIssues((prev) => [...prev, ...newIssues])
-        setPage((prev) => prev + 1)
+        console.error("Error fetching issues:", result.kind)
+        // If it's a server error, maybe stop trying?
+        // If it's 400 (bad request -> invalid page), stop.
+        if (result.kind === "bad-data" || result.kind === "rejected") {
+            setHasMore(false)
+        }
       }
     } catch (error: any) {
-      if (error.code === "rest_post_invalid_page_number") {
-        setHasMore(false)
-      } else {
-        console.error(error.message || error)
-      }
+        console.error("Unexpected error:", error)
     } finally {
       setLoading(false)
     }
