@@ -1,11 +1,13 @@
 # Retrograde News — Backend Middleware API Contract
 
-> **Version:** 0.1.0-draft  
-> **Last Updated:** 2026-02-18  
-> **Status:** Proposal — not yet implemented  
-> **Authors:** Retrograde News Team (Abhishek Haris, Ben Rhee, Faiz Aye, Leon Zhang, Ryan George, Zeke Stephens)
+> **Version:** 0.1.0-draft
+> **Last Updated:** 2026-02-18
+> **Status:** Proposal — not yet implemented
+> **Authors:** Zeke Stephens
 
 ---
+
+Acknowledgements: This document was drafted with the assistance of generative AI tools. For questions or clarifications regarding the details, please create an issue and tag @zekestephens.
 
 ## 1 Overview
 
