@@ -1,20 +1,20 @@
 const palette = {
   neutral100: "#FFFFFF",
-  neutral200: "#F4F2F1",
+  neutral200: "#F9F9F9", // Off-white
   neutral300: "#D7CEC9",
   neutral400: "#B6ACA6",
   neutral500: "#978F8A",
   neutral600: "#564E4A",
   neutral700: "#3C3836",
-  neutral800: "#191015",
+  neutral800: "#1A1A1A", // Near black
   neutral900: "#000000",
 
-  primary100: "#F4E0D9",
-  primary200: "#E8C1B4",
-  primary300: "#DDA28E",
-  primary400: "#D28468",
-  primary500: "#C76542",
-  primary600: "#A54F31",
+  primary100: "#E3EAF2",
+  primary200: "#B9CCE0",
+  primary300: "#8FABCE",
+  primary400: "#658CBC",
+  primary500: "#4991CE", // Brand Blue
+  primary600: "#366CA0",
 
   secondary100: "#DCDDE9",
   secondary200: "#BCC0D6",
