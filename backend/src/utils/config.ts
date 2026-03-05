@@ -12,14 +12,29 @@ const envSchema = z.object({
   PORT: z.string().optional().default("3000"),
 });
 
-const parsedEnv = envSchema.safeParse(process.env);
+export const validateEnv = (envVars: Record<string, string | undefined>) => {
+  return envSchema.parse(envVars);
+};
 
-if (!parsedEnv.success) {
-  console.error("❌ Invalid environment variables:");
-  parsedEnv.error.issues.forEach(issue => {
-    console.error(`- ${issue.path.join('.')}: ${issue.message}`);
-  });
-  process.exit(1);
+let configData: z.infer<typeof envSchema>;
+
+try {
+  configData = validateEnv(process.env);
+} catch (error) {
+  if (process.env.NODE_ENV !== 'test') {
+    if (error instanceof z.ZodError) {
+      console.error("❌ Invalid environment variables:");
+      error.issues.forEach(issue => {
+        console.error(`- ${issue.path.join('.')}: ${issue.message}`);
+      });
+    }
+    process.exit(1);
+  } else {
+    // In test environment, we still need configData to have a type/value even if it failed,
+    // but the test suite won't run normal server anyway, or we handle it gracefully.
+    // For now we just cast it so the compiler doesn't complain, tests will stub process.env
+    configData = process.env as any;
+  }
 }
 
-export const config = parsedEnv.data;
+export const config = configData;

@@ -70,39 +70,41 @@ If a required variable is missing, the application must process.exit(1).
 
 Acknowledgment: By proceeding, the AI agent agrees to these constraints. Failure to follow the "Code Plan First" rule will result in a rejected task.
 
+7. Relevent Files
+@backend-spec-doc.md
 
 # 🛠️ Retrograde Backend Implementation Roadmap
 
 ## Phase 1.0: Foundation & Environment Setup
 
-- [ ] **1.1 Project Initialization**
-  - [ ]  Initialize `npm init - [ ] y` and install: `express`, `dotenv`, `helmet`, `morgan`, `zod`, `uuid`.
-  - [ ]  Install dev dependencies: `typescript`, `@types/node`, `@types/express`, `ts- [ ] node- [ ] dev`, `jest`, `supertest`.
+- [x] **1.1 Project Initialization**
+  - [x]  Initialize `npm init - [ ] y` and install: `express`, `dotenv`, `helmet`, `morgan`, `zod`, `uuid`.
+  - [x]  Install dev dependencies: `typescript`, `@types/node`, `@types/express`, `ts- [ ] node- [ ] dev`, `jest`, `supertest`.
 
-- [ ] **1.2 Directory Scaffolding**
-  - [ ]  Create the `src/` folder tree: `routes`, `controllers`, `middleware`, `services`, `utils`.
-  - [ ]  Create empty `.ts` files for all endpoints defined in the spec.
+- [x] **1.2 Directory Scaffolding**
+  - [x]  Create the `src/` folder tree: `routes`, `controllers`, `middleware`, `services`, `utils`.
+  - [x]  Create empty `.ts` files for all endpoints defined in the spec.
 
-- [ ] **1.3 Strict Environment Validation**
-  - [ ]  Implement `src/utils/config.ts` using Zod to validate all Section 11 variables.
-  - [ ]  Ensure the process exits with code 1 if `FIREBASE_SERVICE_ACCOUNT` or `DATABASE_URL` is missing.
+- [x] **1.3 Strict Environment Validation**
+  - [x]  Implement `src/utils/config.ts` using Zod to validate all Section 11 variables.
+  - [x]  Ensure the process exits with code 1 if `FIREBASE_SERVICE_ACCOUNT` or `DATABASE_URL` is missing.
 
 - [ ] **1.4 Basic Server Setup**
-  - [ ]  Configure `app.ts` with security middleware (`helmet`).
-  - [ ]  Set up `server.ts` to listen on the configured port.
+  - [x]  Configure `app.ts` with security middleware (`helmet`).
+  - [x]  Set up `server.ts` to listen on the configured port.
 
 ## Phase 1.1: Core Middleware & Error Standards
 
-- [ ] **2.1 RFC 9457 Error Handling**
-  - [ ]  Create `src/middleware/errorHandler.ts` to intercept all errors.
-  - [ ]  Map standard HTTP errors to the specified JSON "Problem Details" shape.
+- [x] **2.1 RFC 9457 Error Handling**
+  - [x]  Create `src/middleware/errorHandler.ts` to intercept all errors.
+  - [x]  Map standard HTTP errors to the specified JSON "Problem Details" shape.
 
-- [ ] **2.2 Multi- [ ] Tier Rate Limiting**
-  - [ ]  Implement `src/middleware/rateLimiter.ts`.
-  - [ ]  Define separate stores for Public (30/min), Auth (120/min), and OTP (5/15min) limits.
+- [x] **2.2 Multi- [ ] Tier Rate Limiting**
+  - [x]  Implement `src/middleware/rateLimiter.ts`.
+  - [x]  Define separate stores for Public (30/min), Auth (120/min), and OTP (5/15min) limits.
 
-- [ ] **2.3 Logging Utility**
-  - [ ]  Implement `src/utils/logger.ts` (using Winston or Pino) for standardized request/error logging.
+- [x] **2.3 Logging Utility**
+  - [x]  Implement `src/utils/logger.ts` (using Winston or Pino) for standardized request/error logging.
 
 ## Phase 1.2: Database & User Persistence (SQLite)
 

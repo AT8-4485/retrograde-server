@@ -8,7 +8,7 @@ const zod_1 = require("zod");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const envSchema = zod_1.z.object({
-    FIREBASE_SERVICE_ACCOUNT: zod_1.z.string().min(1, "FIREBASE_SERVICE_ACCOUNT is required"),
+    GOOGLE_APPLICATION_CREDENTIALS: zod_1.z.string().min(1, "GOOGLE_APPLICATION_CREDENTIALS is required"),
     DATABASE_URL: zod_1.z.string().min(1, "DATABASE_URL is required"),
     WORDPRESS_API_BASE_URL: zod_1.z.string().url("WORDPRESS_API_BASE_URL must be a valid URL"),
     JWT_SECRET: zod_1.z.string().min(1, "JWT_SECRET is required"),
