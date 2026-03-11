@@ -149,42 +149,58 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
 **Dependencies to Install:**
 - `date-fns` (Required for calculating the strict startOfDay and endOfDay ISO strings for WordPress date filtering, identical to the reference client code).
 
-- [ ] **5.1 Define Taxonomies**
-  - [ ]  Create `src/utils/wordpressTaxonomies.ts`.
-  - [ ]  Export a `WP_CATEGORIES` constant object containing the exact IDs from the reference file (NEWS: 1363, OPINION: 1364, LIFE_ARTS: 1365, COMICS: 1366, ISSUE: 1407).
+- [x] **5.1 Define Taxonomies**
+  - [x]  Create `src/utils/wordpressTaxonomies.ts`.
+  - [x]  Export a `WP_CATEGORIES` constant object containing the exact IDs from the reference file (NEWS: 1363, OPINION: 1364, LIFE_ARTS: 1365, COMICS: 1366, ISSUE: 1407).
 
-- [ ] **5.2 Refactor src/services/wordpress.ts**
-  - [ ]  Extract Base Fetcher: Create a private helper function `fetchFromWP(queryParams: URLSearchParams)` that handles the native fetch, error checking (throwing ApiError), extracting `X-WP-TotalPages`, and applying the dataStripper.
-  - [ ]  Update `fetchFeed`: Refactor the existing feed function to use `fetchFromWP`, ensuring it always excludes the ISSUE category (`categories_exclude=WP_CATEGORIES.ISSUE`).
-  - [ ]  Add `fetchFeedByCategory`: Create a function accepting an array of `categoryIds`, `page`, and `limit`. Append the IDs as a comma-separated string to the `categories` parameter. Always exclude the ISSUE category.
-  - [ ]  Add `fetchIssues`: Create a function to fetch a paginated list of issue containers by targeting `categories=WP_CATEGORIES.ISSUE`.
-  - [ ]  Add `fetchLatestIssue`: Create a function that fetches exactly 1 post (`per_page=1`) from the ISSUE category.
-  - [ ]  Add `fetchArticlesByDate`: Create a function accepting a date string. Use `date-fns` to calculate `after` (start of day ISO) and `before` (end of day ISO). Fetch up to 100 articles falling within that window, excluding the ISSUE category.
+- [x] **5.2 Refactor src/services/wordpress.ts**
+  - [x]  Extract Base Fetcher: Create a private helper function `fetchFromWP(queryParams: URLSearchParams)` that handles the native fetch, error checking (throwing ApiError), extracting `X-WP-TotalPages`, and applying the dataStripper.
+  - [x]  Update `fetchFeed`: Refactor the existing feed function to use `fetchFromWP`, ensuring it always excludes the ISSUE category (`categories_exclude=WP_CATEGORIES.ISSUE`).
+  - [x]  Add `fetchFeedByCategory`: Create a function accepting an array of `categoryIds`, `page`, and `limit`. Append the IDs as a comma-separated string to the `categories` parameter. Always exclude the ISSUE category.
+  - [x]  Add `fetchIssues`: Create a function to fetch a paginated list of issue containers by targeting `categories=WP_CATEGORIES.ISSUE`.
+  - [x]  Add `fetchLatestIssue`: Create a function that fetches exactly 1 post (`per_page=1`) from the ISSUE category.
+  - [x]  Add `fetchArticlesByDate`: Create a function accepting a date string. Use `date-fns` to calculate `after` (start of day ISO) and `before` (end of day ISO). Fetch up to 100 articles falling within that window, excluding the ISSUE category.
 
-- [ ] **5.3 Expand Routes in src/routes/feed.ts**
-  - [ ]  GET `/` (Existing): Keep the current feed, but ensure it utilizes the refactored service.
-  - [ ]  GET `/category`: Create a new route. Expect a `categories` query parameter (e.g., `?categories=1363,1364`). Parse and validate this with Zod into an array of numbers, then call `fetchFeedByCategory`. Return the standard Pagination Envelope.
-  - [ ]  GET `/issues`: Create a new route for the paginated archive of past issues. Return the standard Pagination Envelope.
-  - [ ]  GET `/issues/latest`: Create a route that first calls `fetchLatestIssue()`. If an issue exists, extract its `publishedAt` date, then immediately call `fetchArticlesByDate(publishedAt)`. Return a custom JSON payload containing both the issue details and its associated articles: `{ issue: LeanArticle, articles: LeanArticle[] }`.
+- [x] **5.3 Expand Routes in src/routes/feed.ts**
+  - [x]  GET `/` (Existing): Keep the current feed, but ensure it utilizes the refactored service.
+  - [x]  GET `/category`: Create a new route. Expect a `categories` query parameter (e.g., `?categories=1363,1364`). Parse and validate this with Zod into an array of numbers, then call `fetchFeedByCategory`. Return the standard Pagination Envelope.
+  - [x]  GET `/issues`: Create a new route for the paginated archive of past issues. Return the standard Pagination Envelope.
+  - [x]  GET `/issues/latest`: Create a route that first calls `fetchLatestIssue()`. If an issue exists, extract its `publishedAt` date, then immediately call `fetchArticlesByDate(publishedAt)`. Return a custom JSON payload containing both the issue details and its associated articles: `{ issue: LeanArticle, articles: LeanArticle[] }`.
 
-- [ ] **5.4 Update Integration Tests**
-  - [ ]  Update `tests/feed.test.ts` to mock the new routes.
-  - [ ]  Add a specific test for `/v1/feed/issues/latest` to ensure it successfully orchestrates the dual-fetch (fetching the issue, then fetching the articles for that issue's date).
+- [x] **5.4 Update Integration Tests**
+  - [x]  Update `tests/feed.test.ts` to mock the new routes.
+  - [x]  Add a specific test for `/v1/feed/issues/latest` to ensure it successfully orchestrates the dual-fetch (fetching the issue, then fetching the articles for that issue's date).
 
-## Phase 1.5: Passwordless Authentication (Firebase)
+## Phase 1.5: Passwordless Authentication (Client-Led Flow + Stateful Sessions)
 
-- [ ] **6.1 Firebase Admin Integration**
-  - [ ]  Initialize Firebase in `src/utils/firebase.ts`.
+- [x] **6.1 Firebase Admin Integration & Dependencies**
+  - [x]  Install `firebase-admin`, `jsonwebtoken`, and `uuid` (plus `@types/jsonwebtoken` for dev).
+  - [x]  Add `JWT_SECRET` and `JWT_REFRESH_SECRET` to the Zod schema in `src/utils/config.ts`.
+  - [x]  Initialize the Firebase Admin SDK in `src/utils/firebase.ts` using the `FIREBASE_SERVICE_ACCOUNT` config.
 
-- [ ] **6.2 OTP Flow Implementation**
-  - [ ]  Implement `POST /v1/auth/otp` to trigger the OTC email via Firebase.
-  - [ ]  Implement `POST /v1/auth/verify` to validate codes and issue local JWTs.
+- [x] **6.2 Database Schema Update (Stateful Sessions)**
+  - [x]  Update `prisma/schema.prisma` to include a `Session` model. It should include `id` (UUIDv7), `userId` (relation to User), `jti` (String, unique), and `expiresAt` (DateTime).
+  - [x]  Create the Prisma migration for the new table.
+  - [x]  Update `src/services/user.ts` (or create `src/services/session.ts`) to handle creating, finding, and deleting sessions.
 
-- [ ] **6.3 Account Auto- [ ] Provisioning**
-  - [ ]  Ensure `/verify` creates a new record in SQLite if the email is new.
+- [x] **6.3 Token Verification & Issuance**
+  - [x]  Create `POST /v1/auth/verify` in `src/routes/auth.ts`.
+  - [x]  Verify the `firebaseIdToken` using `admin.auth().verifyIdToken(token)` and extract the email.
+  - [x]  Check the SQLite database; if the email is new, auto-provision a new User record (UUIDv7).
+  - [x]  Generate a short-lived **Access Token** (e.g., 15m) using `JWT_SECRET`.
+  - [x]  Generate a unique `jti` (UUIDv7). Create a long-lived **Refresh Token** (e.g., 60d) containing this `jti` using `JWT_REFRESH_SECRET`.
+  - [x]  Save the `jti` and user relationship to the `Session` table in SQLite.
+  - [x]  Return both the Access Token and Refresh Token to the client.
 
-- [ ] **6.4 Authorization Middleware**
-  - [ ]  Create `src/middleware/auth.ts` to guard protected routes using the Bearer token.
+- [x] **6.4 Refresh & Revocation (Logout) Routes**
+  - [x]  Create `POST /v1/auth/refresh`. Accept a Refresh Token, verify its signature, and extract the `jti`. Check the `Session` table to ensure that `jti` is still active. If valid, issue a fresh 15m Access Token.
+  - [x]  Create `POST /v1/auth/logout`. Accept a Refresh Token (or `jti`), and delete the corresponding record from the `Session` table, instantly revoking its ability to generate new Access Tokens.
+
+- [x] **6.5 Authorization Middleware**
+  - [x]  Create `src/middleware/auth.ts` to guard protected routes.
+  - [x]  Extract the Bearer token from the `Authorization` header and verify it using `jsonwebtoken` and `JWT_SECRET`.
+  - [x]  Extend the Express `Request` type namespace to attach the decoded JWT payload to `req.user`.
+  - [x]  If the token is missing, expired, or invalid, immediately throw an RFC 9457 formatted `ApiError` (401 Unauthorized) to the global error handler.
 
 ## Phase 1.6: Bookmarks & Push Notifications
 
