@@ -17,11 +17,18 @@ const errorHandler_1 = require("../middleware/errorHandler");
  */
 const verifyAndIssueTokens = async (firebaseIdToken) => {
     try {
-        const decodedToken = await firebase_1.firebaseAuth.verifyIdToken(firebaseIdToken);
-        if (!decodedToken.email) {
-            throw new errorHandler_1.ApiError(400, 'https://api.retrogradenews.app/errors/bad-request', 'Bad Request', 'Firebase token does not contain an email');
+        let email = '';
+        // Local Test Mode Bypass
+        if ((config_1.config.NODE_ENV === 'dev' || config_1.config.NODE_ENV === 'test') && firebaseIdToken === 'MOCK_TOKEN_LEON@TEST.COM') {
+            email = 'leon@test.com';
         }
-        const email = decodedToken.email;
+        else {
+            const decodedToken = await firebase_1.firebaseAuth.verifyIdToken(firebaseIdToken);
+            if (!decodedToken.email) {
+                throw new errorHandler_1.ApiError(400, 'https://api.retrogradenews.app/errors/bad-request', 'Bad Request', 'Firebase token does not contain an email');
+            }
+            email = decodedToken.email;
+        }
         let user = await (0, user_1.findUserByEmail)(email);
         if (!user) {
             user = await (0, user_1.createUser)(email);

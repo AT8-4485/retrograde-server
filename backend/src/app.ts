@@ -6,6 +6,8 @@ import { errorHandler } from './middleware/errorHandler';
 import { publicLimiter } from './middleware/rateLimiter';
 import feedRouter from './routes/feed';
 import authRouter from './routes/auth';
+import bookmarkRouter from './routes/bookmarks';
+import notificationRouter from './routes/notifications';
 
 const app = express();
 
@@ -23,6 +25,8 @@ app.use(requestLogger);
 // Mount routes
 app.use('/v1/feed', publicLimiter, feedRouter);
 app.use('/v1/auth', authRouter);
+app.use('/v1/bookmarks', bookmarkRouter);
+app.use('/v1/notifications', notificationRouter);
 
 // Global Error Handler (must be registered last)
 app.use(errorHandler);

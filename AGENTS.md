@@ -204,16 +204,22 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
 
 ## Phase 1.6: Bookmarks & Push Notifications
 
-- [ ] **7.1 Bookmarks CRUD**
-  - [ ]  Implement GET, POST, and DELETE in `src/routes/bookmarks.ts`.
-  - [ ]  Enforce user- [ ] isolation (users can only see/delete their own bookmarks).
+- [x] **7.1 Bookmarks CRUD (Protected)**
+  - [x]  Apply the `requireAuth` middleware to all routes in `src/routes/bookmarks.ts`.
+  - [x]  Implement `GET /v1/bookmarks`: Fetch bookmarks using Prisma where `userId === req.user.id`. Support pagination (cursor/limit) and `type` filtering.
+  - [x]  Implement `POST /v1/bookmarks`: Validate the body using Zod (`type`, `title`, `url`, `thumbnailUrl`, `metadata`). Force the `userId` to be `req.user.id` (do NOT accept a user ID from the client body).
+  - [x]  Implement `DELETE /v1/bookmarks/:id`: Ensure the bookmark being deleted actually belongs to `req.user.id` before executing the Prisma delete operation.
 
-- [ ] **7.2 Expo Push Service**
-  - [ ]  Implement `src/services/expoPush.ts` using `expo- [ ] server- [ ] sdk`.
+- [x] **7.2 Expo Push Service**
+  - [x]  Install `expo-server-sdk`.
+  - [x]  Implement `src/services/expoPush.ts` to initialize the SDK (using `EXPO_ACCESS_TOKEN` from config if applicable).
+  - [x]  Create helper functions to format and send push notification payloads.
 
-- [ ] **7.3 Token Management**
-  - [ ]  Implement `POST /notifications/token` to link device tokens to the active user.
-  - [ ]  Implement `PATCH /notifications/preferences` for notification settings.
+- [x] **7.3 Push Token Management (Protected)**
+  - [x]  Apply the `requireAuth` middleware to all routes in `src/routes/notifications.ts`.
+  - [x]  Implement `POST /v1/notifications/token`: Validate body with Zod (`token`, `platform`, `deviceName`). Upsert the `PushToken` in Prisma, firmly linking it to `req.user.id`.
+  - [x]  Implement `PATCH /v1/notifications/preferences`: Update the JSON preferences string for the specific token associated with `req.user.id`.
+  - [x]  Implement `DELETE /v1/notifications/token/:tokenId`: Ensure the token belongs to `req.user.id` before deleting it from the database (e.g., when a user logs out of a specific device).
 
 ## Phase 1.7: In-Memory Caching
 

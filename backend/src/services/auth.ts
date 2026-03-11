@@ -18,13 +18,19 @@ export interface AuthTokens {
  */
 export const verifyAndIssueTokens = async (firebaseIdToken: string): Promise<{ user: User, tokens: AuthTokens }> => {
   try {
-    const decodedToken = await firebaseAuth.verifyIdToken(firebaseIdToken);
-    
-    if (!decodedToken.email) {
-      throw new ApiError(400, 'https://api.retrogradenews.app/errors/bad-request', 'Bad Request', 'Firebase token does not contain an email');
+    let email = '';
+
+    // Local Test Mode Bypass
+    if ((config.NODE_ENV === 'dev' || config.NODE_ENV === 'test') && firebaseIdToken === 'MOCK_TOKEN_LEON@TEST.COM') {
+      email = 'leon@test.com';
+    } else {
+      const decodedToken = await firebaseAuth.verifyIdToken(firebaseIdToken);
+      if (!decodedToken.email) {
+        throw new ApiError(400, 'https://api.retrogradenews.app/errors/bad-request', 'Bad Request', 'Firebase token does not contain an email');
+      }
+      email = decodedToken.email;
     }
 
-    const email = decodedToken.email;
     let user = await findUserByEmail(email);
 
     if (!user) {

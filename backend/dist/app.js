@@ -10,6 +10,8 @@ const errorHandler_1 = require("./middleware/errorHandler");
 const rateLimiter_1 = require("./middleware/rateLimiter");
 const feed_1 = __importDefault(require("./routes/feed"));
 const auth_1 = __importDefault(require("./routes/auth"));
+const bookmarks_1 = __importDefault(require("./routes/bookmarks"));
+const notifications_1 = __importDefault(require("./routes/notifications"));
 const app = (0, express_1.default)();
 // Security and utility middleware
 app.use((0, helmet_1.default)());
@@ -21,6 +23,8 @@ app.use(logger_1.requestLogger);
 // Mount routes
 app.use('/v1/feed', rateLimiter_1.publicLimiter, feed_1.default);
 app.use('/v1/auth', auth_1.default);
+app.use('/v1/bookmarks', bookmarks_1.default);
+app.use('/v1/notifications', notifications_1.default);
 // Global Error Handler (must be registered last)
 app.use(errorHandler_1.errorHandler);
 exports.default = app;
