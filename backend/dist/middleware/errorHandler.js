@@ -32,8 +32,15 @@ const errorHandler = (err, req, res, next) => {
         });
         return;
     }
-    if (err instanceof zod_1.ZodError) {
-        const detail = err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    if (err instanceof zod_1.ZodError || err.name === 'ZodError') {
+        let detail = 'Validation failed';
+        try {
+            const issues = err.errors || err.issues || [];
+            detail = issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+        }
+        catch (e) {
+            reqLogger.error({ parseError: e }, 'Failed to parse ZodError detail');
+        }
         reqLogger.warn({ err, detail }, 'Zod Validation Error');
         res.status(400).json({
             type: 'https://api.retrogradenews.app/errors/validation-error',

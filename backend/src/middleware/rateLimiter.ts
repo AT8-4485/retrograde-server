@@ -1,20 +1,14 @@
-import rateLimit, { Options } from 'express-rate-limit';
+import {rateLimit, ipKeyGenerator } from 'express-rate-limit';
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from './errorHandler';
 
-/**
- * Custom handler function for express-rate-limit that utilizes the ApiError class.
- * This ensures rate limit errors conform to the RFC 9457 error standard.
- */
-const rateLimitHandler = (req: Request, res: Response, next: NextFunction, options: Options) => {
-  next(
-    new ApiError(
-      options.statusCode,
-      'https://api.retrogradenews.app/errors/too-many-requests',
-      'Too Many Requests',
-      options.message as string
-    )
-  );
+const limitReachedHandler = (req: Request, res: Response, next: NextFunction) => {
+  next(new ApiError(
+    429,
+    'https://api.retrogradenews.app/errors/too-many-requests',
+    'Too Many Requests',
+    'Rate limit exceeded. Please try again later.'
+  ));
 };
 
 /**
@@ -28,7 +22,7 @@ export const publicLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   statusCode: 429,
   message: 'Public rate limit exceeded. Please try again later.',
-  handler: rateLimitHandler,
+  handler: limitReachedHandler,
 });
 
 /**
@@ -42,7 +36,7 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   statusCode: 429,
   message: 'Authenticated rate limit exceeded. Please try again later.',
-  handler: rateLimitHandler,
+  handler: limitReachedHandler,
   keyGenerator: (req) => {
     // Note: Once auth middleware is injecting `req.user`, this should prioritize 
     // user ID over IP to accurately track the limit across devices
@@ -62,7 +56,7 @@ export const otpLimiter = rateLimit({
   legacyHeaders: false,
   statusCode: 429,
   message: 'Too many OTP requests for this email. Please try again in 15 minutes.',
-  handler: rateLimitHandler,
+  handler: limitReachedHandler,
   keyGenerator: (req) => {
     // Check if email is in the request body for POST /auth/otp
     if (req.body && req.body.email) {

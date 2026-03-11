@@ -9,7 +9,7 @@ const uuid_1 = require("uuid");
 const isDev = process.env.NODE_ENV !== 'production';
 // Base logger instance
 exports.logger = (0, pino_1.default)({
-    level: process.env.LOG_LEVEL || 'info',
+    level: process.env.NODE_ENV === 'test' ? 'silent' : (process.env.LOG_LEVEL || 'info'),
     ...(isDev && {
         transport: {
             target: 'pino-pretty',
