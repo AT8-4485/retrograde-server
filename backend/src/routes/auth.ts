@@ -1,0 +1,30 @@
+import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
+import { verifyFirebaseToken, refreshTokens, logout } from '../controllers/auth';
+import { publicLimiter, authLimiter } from '../middleware/rateLimiter';
+import { ApiError } from '../middleware/errorHandler';
+
+const router = Router();
+
+const verifySchema = z.object({
+  firebaseIdToken: z.string().min(1, 'Firebase ID Token is required'),
+});
+
+const refreshSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh Token is required'),
+});
+
+const validateBody = (schema: z.ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
+  const result = schema.safeParse(req.body);
+  if (!result.success) {
+    const messages = result.error.issues.map((e) => e.message).join(', ');
+    return next(new ApiError(400, 'https://api.retrogradenews.app/errors/bad-request', 'Bad Request', messages));
+  }
+  next();
+};
+
+router.post('/verify', publicLimiter, validateBody(verifySchema), verifyFirebaseToken);
+router.post('/refresh', publicLimiter, validateBody(refreshSchema), refreshTokens);
+router.post('/logout', authLimiter, validateBody(refreshSchema), logout);
+
+export default router;

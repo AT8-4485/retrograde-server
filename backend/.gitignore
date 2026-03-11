@@ -1,7 +1,7 @@
 node_modules/
 .env
 .env.example
-.env.test
+.envtest
 firebaseServiceAccountKey.json
 .db
 /src/generated/prisma

@@ -41,3 +41,26 @@ console.log(JSON.stringify(posts[0], null, 2));
 6. Look at the terminal running your server. You will now see the massive, deeply nested raw WordPress JSON payload (including the `_embedded` array) printed out!
 
 *Remember to remove the `console.log` when you're done inspecting the payload!*
+
+## 4. Testing Advanced Routing (Phase 1.4)
+
+With the completion of Phase 1.4, the API supports filtering by category, fetching past issues, and retrieving the latest issue with its corresponding articles. Here is how you can test each of these endpoints.
+
+### Fetch by Category
+To fetch articles that belong to specific categories (e.g., News `1363` and Opinion `1364`), use the `/category` route:
+```bash
+curl -s "http://localhost:3000/v1/feed/category?categories=1363,1364&cursor=1&limit=5" | jq
+```
+
+### Fetch Past Issues
+To fetch the paginated archive of past issue containers, use the `/issues` route:
+```bash
+curl -s "http://localhost:3000/v1/feed/issues?cursor=1&limit=5" | jq
+```
+
+### Fetch Latest Issue and Articles
+To fetch the most recent issue and automatically retrieve all the articles published on that issue's date, use the `/issues/latest` route:
+```bash
+curl -s "http://localhost:3000/v1/feed/issues/latest" | jq
+```
+*Note: This route returns a custom payload containing `{ issue, articles: [] }` rather than the standard pagination envelope.*

@@ -18,6 +18,17 @@ model User {
   bookmarks   Bookmark[]
   gameResults GameResult[]
   pushTokens  PushToken[]
+  sessions    Session[]
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  jti       String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Bookmark {

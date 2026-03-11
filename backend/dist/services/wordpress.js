@@ -1,12 +1,34 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fetchFeed = void 0;
+exports.fetchArticlesByDate = exports.fetchLatestIssue = exports.fetchIssues = exports.fetchFeedByCategory = exports.fetchFeed = void 0;
+const date_fns_1 = require("date-fns");
 const config_1 = require("../utils/config");
 const errorHandler_1 = require("../middleware/errorHandler");
-const fetchFeed = async (page, limit) => {
+const wordpressTaxonomies_1 = require("../utils/wordpressTaxonomies");
+const dataStripper = (posts) => {
+    return posts.map(post => {
+        // Safe navigation using optional chaining
+        const authorName = post._embedded?.author?.[0]?.name || 'Unknown Author';
+        const thumbnailUrl = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || null;
+        // Categories are typically the first array inside wp:term
+        const categories = post._embedded?.['wp:term']?.[0]?.map((term) => term.name) || [];
+        return {
+            id: String(post.id),
+            title: post.title.rendered,
+            excerpt: post.excerpt.rendered,
+            content: post.content.rendered,
+            thumbnailUrl,
+            authorName,
+            publishedAt: post.date,
+            categories
+        };
+    });
+};
+const fetchFromWP = async (queryParams) => {
     const baseUrl = config_1.config.WORDPRESS_API_BASE_URL;
     // Automatically append _embed=true to get author/media in the same request
-    const url = `${baseUrl}/wp-json/wp/v2/posts?_embed=true&categories_exclude=1407&page=${page}&per_page=${limit}`;
+    queryParams.set('_embed', 'true');
+    const url = `${baseUrl}/wp-json/wp/v2/posts?${queryParams.toString()}`;
     try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -19,24 +41,7 @@ const fetchFeed = async (page, limit) => {
             totalPages = parseInt(totalPagesHeader, 10);
         }
         const posts = await response.json();
-        // Data Stripper
-        const data = posts.map(post => {
-            // Safe navigation using optional chaining
-            const authorName = post._embedded?.author?.[0]?.name || 'Unknown Author';
-            const thumbnailUrl = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || null;
-            // Categories are typically the first array inside wp:term
-            const categories = post._embedded?.['wp:term']?.[0]?.map((term) => term.name) || [];
-            return {
-                id: String(post.id),
-                title: post.title.rendered,
-                excerpt: post.excerpt.rendered,
-                content: post.content.rendered,
-                thumbnailUrl,
-                authorName,
-                publishedAt: post.date,
-                categories
-            };
-        });
+        const data = dataStripper(posts);
         return { data, totalPages };
     }
     catch (error) {
@@ -45,4 +50,55 @@ const fetchFeed = async (page, limit) => {
         throw new errorHandler_1.ApiError(503, 'https://api.retrogradenews.app/errors/service-unavailable', 'Service Unavailable', 'Could not connect to WordPress CMS');
     }
 };
+const fetchFeed = async (page = 1, limit = 10) => {
+    const params = new URLSearchParams({
+        page: String(page),
+        per_page: String(limit),
+        categories_exclude: String(wordpressTaxonomies_1.WP_CATEGORIES.ISSUE)
+    });
+    return fetchFromWP(params);
+};
 exports.fetchFeed = fetchFeed;
+const fetchFeedByCategory = async (categoryIds, page = 1, limit = 10) => {
+    const params = new URLSearchParams({
+        page: String(page),
+        per_page: String(limit),
+        categories_exclude: String(wordpressTaxonomies_1.WP_CATEGORIES.ISSUE)
+    });
+    if (categoryIds && categoryIds.length > 0) {
+        params.set('categories', categoryIds.join(','));
+    }
+    return fetchFromWP(params);
+};
+exports.fetchFeedByCategory = fetchFeedByCategory;
+const fetchIssues = async (page = 1, limit = 10) => {
+    const params = new URLSearchParams({
+        page: String(page),
+        per_page: String(limit),
+        categories: String(wordpressTaxonomies_1.WP_CATEGORIES.ISSUE)
+    });
+    return fetchFromWP(params);
+};
+exports.fetchIssues = fetchIssues;
+const fetchLatestIssue = async () => {
+    const params = new URLSearchParams({
+        per_page: '1',
+        categories: String(wordpressTaxonomies_1.WP_CATEGORIES.ISSUE)
+    });
+    const { data } = await fetchFromWP(params);
+    return data.length > 0 ? data[0] : null;
+};
+exports.fetchLatestIssue = fetchLatestIssue;
+const fetchArticlesByDate = async (dateString) => {
+    const date = new Date(dateString);
+    const after = (0, date_fns_1.formatISO)((0, date_fns_1.startOfDay)(date));
+    const before = (0, date_fns_1.formatISO)((0, date_fns_1.endOfDay)(date));
+    const params = new URLSearchParams({
+        after,
+        before,
+        categories_exclude: String(wordpressTaxonomies_1.WP_CATEGORIES.ISSUE),
+        per_page: '100' // Get all posts for the issue
+    });
+    return fetchFromWP(params);
+};
+exports.fetchArticlesByDate = fetchArticlesByDate;

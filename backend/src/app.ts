@@ -5,6 +5,7 @@ import { requestLogger } from './utils/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { publicLimiter } from './middleware/rateLimiter';
 import feedRouter from './routes/feed';
+import authRouter from './routes/auth';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(requestLogger);
 
 // Mount routes
 app.use('/v1/feed', publicLimiter, feedRouter);
+app.use('/v1/auth', authRouter);
 
 // Global Error Handler (must be registered last)
 app.use(errorHandler);

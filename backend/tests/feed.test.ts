@@ -80,3 +80,109 @@ describe('GET /v1/feed', () => {
     expect(res.body.type).toBe('https://api.retrogradenews.app/errors/service-unavailable');
   });
 });
+
+describe('GET /v1/feed/category', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const mockWpPost = {
+    id: 124,
+    date: '2023-10-02T12:00:00Z',
+    title: { rendered: 'Category Post' },
+    excerpt: { rendered: '<p>Cat excerpt</p>' },
+    content: { rendered: '<p>Cat content</p>' },
+    _embedded: {}
+  };
+
+  it('should return posts filtered by category', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'X-WP-TotalPages': '1' }),
+      json: async () => [mockWpPost]
+    });
+
+    const res = await request(app).get('/v1/feed/category?categories=1363,1364');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].id).toBe('124');
+    
+    // Ensure the fetch URL contains the category ids
+    const fetchCallUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+    expect(fetchCallUrl).toContain('categories=1363%2C1364');
+  });
+
+  it('should fail if no categories are provided', async () => {
+    const res = await request(app).get('/v1/feed/category');
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('GET /v1/feed/issues/latest', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const mockIssuePost = {
+    id: 999,
+    date: '2023-10-15T12:00:00Z',
+    title: { rendered: 'October Issue' },
+    excerpt: { rendered: '' },
+    content: { rendered: '' },
+    _embedded: {}
+  };
+
+  const mockArticlePost = {
+    id: 1000,
+    date: '2023-10-15T14:00:00Z',
+    title: { rendered: 'Issue Article' },
+    excerpt: { rendered: '' },
+    content: { rendered: '' },
+    _embedded: {}
+  };
+
+  it('should dual-fetch issue and articles', async () => {
+    // First call is fetchLatestIssue, second is fetchArticlesByDate
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: new Headers({ 'X-WP-TotalPages': '1' }),
+        json: async () => [mockIssuePost]
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: new Headers({ 'X-WP-TotalPages': '1' }),
+        json: async () => [mockArticlePost]
+      });
+
+    const res = await request(app).get('/v1/feed/issues/latest');
+
+    expect(res.status).toBe(200);
+    expect(res.body.issue).toBeDefined();
+    expect(res.body.issue.id).toBe('999');
+    expect(res.body.articles).toHaveLength(1);
+    expect(res.body.articles[0].id).toBe('1000');
+
+    // Verify correct endpoints were called
+    const calls = (global.fetch as jest.Mock).mock.calls;
+    expect(calls.length).toBe(2);
+    expect(calls[0][0]).toContain('categories=1407'); // WP_CATEGORIES.ISSUE
+    expect(calls[1][0]).toContain('after=');
+    expect(calls[1][0]).toContain('before=');
+  });
+
+  it('should return null issue if none found', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers({ 'X-WP-TotalPages': '1' }),
+      json: async () => []
+    });
+
+    const res = await request(app).get('/v1/feed/issues/latest');
+
+    expect(res.status).toBe(200);
+    expect(res.body.issue).toBeNull();
+    expect(res.body.articles).toEqual([]);
+  });
+});

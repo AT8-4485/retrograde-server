@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.test', override: true });
+dotenv.config({ path: '.envtest', override: true });
 
 import { prisma } from '../src/utils/db';
 

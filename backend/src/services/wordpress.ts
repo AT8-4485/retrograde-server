@@ -1,5 +1,7 @@
+import { startOfDay, endOfDay, formatISO } from 'date-fns';
 import { config } from '../utils/config';
 import { ApiError } from '../middleware/errorHandler';
+import { WP_CATEGORIES } from '../utils/wordpressTaxonomies';
 
 export interface LeanArticle {
   id: string;
@@ -25,10 +27,33 @@ export interface WPPost {
   };
 }
 
-export const fetchFeed = async (page: number, limit: number): Promise<{ data: LeanArticle[], totalPages: number }> => {
+const dataStripper = (posts: WPPost[]): LeanArticle[] => {
+  return posts.map(post => {
+    // Safe navigation using optional chaining
+    const authorName = post._embedded?.author?.[0]?.name || 'Unknown Author';
+    const thumbnailUrl = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || null;
+    // Categories are typically the first array inside wp:term
+    const categories = post._embedded?.['wp:term']?.[0]?.map((term: any) => term.name) || [];
+
+    return {
+      id: String(post.id),
+      title: post.title.rendered,
+      excerpt: post.excerpt.rendered,
+      content: post.content.rendered,
+      thumbnailUrl,
+      authorName,
+      publishedAt: post.date,
+      categories
+    };
+  });
+};
+
+const fetchFromWP = async (queryParams: URLSearchParams): Promise<{ data: LeanArticle[], totalPages: number }> => {
   const baseUrl = config.WORDPRESS_API_BASE_URL;
   // Automatically append _embed=true to get author/media in the same request
-  const url = `${baseUrl}/wp-json/wp/v2/posts?_embed=true&categories_exclude=1407&page=${page}&per_page=${limit}`;
+  queryParams.set('_embed', 'true');
+  
+  const url = `${baseUrl}/wp-json/wp/v2/posts?${queryParams.toString()}`;
 
   try {
     const response = await fetch(url);
@@ -49,27 +74,7 @@ export const fetchFeed = async (page: number, limit: number): Promise<{ data: Le
     }
 
     const posts: WPPost[] = await response.json();
-    console.log(JSON.stringify(posts[0], null, 2));
-
-    // Data Stripper
-    const data: LeanArticle[] = posts.map(post => {
-      // Safe navigation using optional chaining
-      const authorName = post._embedded?.author?.[0]?.name || 'Unknown Author';
-      const thumbnailUrl = post._embedded?.['wp:featuredmedia']?.[0]?.source_url || null;
-      // Categories are typically the first array inside wp:term
-      const categories = post._embedded?.['wp:term']?.[0]?.map((term: any) => term.name) || [];
-
-      return {
-        id: String(post.id),
-        title: post.title.rendered,
-        excerpt: post.excerpt.rendered,
-        content: post.content.rendered,
-        thumbnailUrl,
-        authorName,
-        publishedAt: post.date,
-        categories
-      };
-    });
+    const data = dataStripper(posts);
 
     return { data, totalPages };
   } catch (error) {
@@ -83,4 +88,58 @@ export const fetchFeed = async (page: number, limit: number): Promise<{ data: Le
   }
 };
 
+export const fetchFeed = async (page: number = 1, limit: number = 10): Promise<{ data: LeanArticle[], totalPages: number }> => {
+  const params = new URLSearchParams({
+    page: String(page),
+    per_page: String(limit),
+    categories_exclude: String(WP_CATEGORIES.ISSUE)
+  });
+  return fetchFromWP(params);
+};
 
+export const fetchFeedByCategory = async (categoryIds: number[], page: number = 1, limit: number = 10): Promise<{ data: LeanArticle[], totalPages: number }> => {
+  const params = new URLSearchParams({
+    page: String(page),
+    per_page: String(limit),
+    categories_exclude: String(WP_CATEGORIES.ISSUE)
+  });
+  
+  if (categoryIds && categoryIds.length > 0) {
+    params.set('categories', categoryIds.join(','));
+  }
+  
+  return fetchFromWP(params);
+};
+
+export const fetchIssues = async (page: number = 1, limit: number = 10): Promise<{ data: LeanArticle[], totalPages: number }> => {
+  const params = new URLSearchParams({
+    page: String(page),
+    per_page: String(limit),
+    categories: String(WP_CATEGORIES.ISSUE)
+  });
+  return fetchFromWP(params);
+};
+
+export const fetchLatestIssue = async (): Promise<LeanArticle | null> => {
+  const params = new URLSearchParams({
+    per_page: '1',
+    categories: String(WP_CATEGORIES.ISSUE)
+  });
+  const { data } = await fetchFromWP(params);
+  return data.length > 0 ? data[0] : null;
+};
+
+export const fetchArticlesByDate = async (dateString: string): Promise<{ data: LeanArticle[], totalPages: number }> => {
+  const date = new Date(dateString);
+  const after = formatISO(startOfDay(date));
+  const before = formatISO(endOfDay(date));
+
+  const params = new URLSearchParams({
+    after,
+    before,
+    categories_exclude: String(WP_CATEGORIES.ISSUE),
+    per_page: '100' // Get all posts for the issue
+  });
+  
+  return fetchFromWP(params);
+};
