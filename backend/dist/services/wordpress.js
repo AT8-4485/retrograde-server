@@ -5,6 +5,7 @@ const date_fns_1 = require("date-fns");
 const config_1 = require("../utils/config");
 const errorHandler_1 = require("../middleware/errorHandler");
 const wordpressTaxonomies_1 = require("../utils/wordpressTaxonomies");
+const cache_1 = require("../utils/cache");
 const dataStripper = (posts) => {
     return posts.map(post => {
         // Safe navigation using optional chaining
@@ -20,14 +21,22 @@ const dataStripper = (posts) => {
             thumbnailUrl,
             authorName,
             publishedAt: post.date,
+            modifiedAt: post.modified,
             categories
         };
     });
 };
-const fetchFromWP = async (queryParams) => {
+const fetchFromWP = async (queryParams, bypassCache = false) => {
     const baseUrl = config_1.config.WORDPRESS_API_BASE_URL;
     // Automatically append _embed=true to get author/media in the same request
     queryParams.set('_embed', 'true');
+    const cacheKey = `wp_${queryParams.toString()}`;
+    if (!bypassCache) {
+        const cachedData = cache_1.cache.get(cacheKey);
+        if (cachedData) {
+            return cachedData;
+        }
+    }
     const url = `${baseUrl}/wp-json/wp/v2/posts?${queryParams.toString()}`;
     try {
         const response = await fetch(url);
@@ -42,7 +51,9 @@ const fetchFromWP = async (queryParams) => {
         }
         const posts = await response.json();
         const data = dataStripper(posts);
-        return { data, totalPages };
+        const payload = { data, totalPages };
+        cache_1.cache.set(cacheKey, payload);
+        return payload;
     }
     catch (error) {
         if (error instanceof errorHandler_1.ApiError)
@@ -50,13 +61,13 @@ const fetchFromWP = async (queryParams) => {
         throw new errorHandler_1.ApiError(503, 'https://api.retrogradenews.app/errors/service-unavailable', 'Service Unavailable', 'Could not connect to WordPress CMS');
     }
 };
-const fetchFeed = async (page = 1, limit = 10) => {
+const fetchFeed = async (page = 1, limit = 10, bypassCache = false) => {
     const params = new URLSearchParams({
         page: String(page),
         per_page: String(limit),
         categories_exclude: String(wordpressTaxonomies_1.WP_CATEGORIES.ISSUE)
     });
-    return fetchFromWP(params);
+    return fetchFromWP(params, bypassCache);
 };
 exports.fetchFeed = fetchFeed;
 const fetchFeedByCategory = async (categoryIds, page = 1, limit = 10) => {

@@ -2,6 +2,7 @@ import { startOfDay, endOfDay, formatISO } from 'date-fns';
 import { config } from '../utils/config';
 import { ApiError } from '../middleware/errorHandler';
 import { WP_CATEGORIES } from '../utils/wordpressTaxonomies';
+import { cache } from '../utils/cache';
 
 export interface LeanArticle {
   id: string;
@@ -11,12 +12,14 @@ export interface LeanArticle {
   thumbnailUrl: string | null;
   authorName: string;
   publishedAt: string;
+  modifiedAt: string;
   categories: string[];
 }
 
 export interface WPPost {
   id: number;
   date: string;
+  modified: string;
   title: { rendered: string };
   excerpt: { rendered: string };
   content: { rendered: string };
@@ -43,15 +46,25 @@ const dataStripper = (posts: WPPost[]): LeanArticle[] => {
       thumbnailUrl,
       authorName,
       publishedAt: post.date,
+      modifiedAt: post.modified,
       categories
     };
   });
 };
 
-const fetchFromWP = async (queryParams: URLSearchParams): Promise<{ data: LeanArticle[], totalPages: number }> => {
+const fetchFromWP = async (queryParams: URLSearchParams, bypassCache: boolean = false): Promise<{ data: LeanArticle[], totalPages: number }> => {
   const baseUrl = config.WORDPRESS_API_BASE_URL;
   // Automatically append _embed=true to get author/media in the same request
   queryParams.set('_embed', 'true');
+  
+  const cacheKey = `wp_${queryParams.toString()}`;
+
+  if (!bypassCache) {
+    const cachedData = cache.get<{ data: LeanArticle[], totalPages: number }>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+  }
   
   const url = `${baseUrl}/wp-json/wp/v2/posts?${queryParams.toString()}`;
 
@@ -76,7 +89,10 @@ const fetchFromWP = async (queryParams: URLSearchParams): Promise<{ data: LeanAr
     const posts: WPPost[] = await response.json();
     const data = dataStripper(posts);
 
-    return { data, totalPages };
+    const payload = { data, totalPages };
+    cache.set(cacheKey, payload);
+
+    return payload;
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(
@@ -88,13 +104,13 @@ const fetchFromWP = async (queryParams: URLSearchParams): Promise<{ data: LeanAr
   }
 };
 
-export const fetchFeed = async (page: number = 1, limit: number = 10): Promise<{ data: LeanArticle[], totalPages: number }> => {
+export const fetchFeed = async (page: number = 1, limit: number = 10, bypassCache: boolean = false): Promise<{ data: LeanArticle[], totalPages: number }> => {
   const params = new URLSearchParams({
     page: String(page),
     per_page: String(limit),
     categories_exclude: String(WP_CATEGORIES.ISSUE)
   });
-  return fetchFromWP(params);
+  return fetchFromWP(params, bypassCache);
 };
 
 export const fetchFeedByCategory = async (categoryIds: number[], page: number = 1, limit: number = 10): Promise<{ data: LeanArticle[], totalPages: number }> => {

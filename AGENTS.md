@@ -221,26 +221,26 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
   - [x]  Implement `PATCH /v1/notifications/preferences`: Update the JSON preferences string for the specific token associated with `req.user.id`.
   - [x]  Implement `DELETE /v1/notifications/token/:tokenId`: Ensure the token belongs to `req.user.id` before deleting it from the database (e.g., when a user logs out of a specific device).
 
-## Phase 1.7: In-Memory Caching
+## Phase 1.7: Cache Warming & Background Polling
 
-- [ ] **8.1 Install an In-Memory Cache Library**
-  - [ ]  We will use a lightweight, standard library called `node-cache` (or `lru-cache`). It stores the API responses temporarily in your server's RAM.
-  - [ ]  Action: `npm install node-cache`
+- [x] **8.1 Install Cache Library**
+  - [x]  Install `node-cache`.
 
-- [ ] **8.2 Create a Cache Utility**
-  - [ ]  File: `src/utils/cache.ts`
-  - [ ]  Action: Initialize the cache with a TTL (Time-To-Live). For a school newspaper, setting the TTL to 5 minutes (300 seconds) is usually perfect. If a typo is fixed on WordPress, it updates in the app within 5 minutes.
+- [x] **8.2 Create Cache Utility (`src/utils/cache.ts`)**
+  - [x]  Initialize `node-cache` with a standard TTL of 24 hours (86400 seconds). This keeps the RAM clean of obscure, old articles while keeping the main feed incredibly fast.
 
-- [ ] **8.3 Implement Caching on the Feed Route**
-  - [ ]  File: `src/routes/feed.ts` (or inside `src/services/wordpress.ts`)
-  - [ ]  Action: Modify the logic to follow this standard caching pattern:
-  - [ ]  Check Cache: Does `cache.get('wp_feed_page_1')` exist?
-  - [ ]  Cache Hit: If yes, return the JSON immediately (takes 2 milliseconds).
-  - [ ]  Cache Miss: If no, fetch the data from WordPress, strip the metadata, save the result to `cache.set('wp_feed_page_1', data)`, and then return it to the user.
+- [x] **8.3 Implement Lazy Loading (`src/services/wordpress.ts`)**
+  - [x]  Wrap the main fetch functions (like `fetchFeed`) in a Cache-Aside pattern.
+  - [x]  If `cache.get(key)` exists, return it. If not, fetch from WP, `cache.set(key, data)`, and return.
 
-- [ ] **8.4 (Stretch Goal): Webhook Invalidation**
-  - [ ]  Instead of waiting 5 minutes for the cache to clear, you can add an endpoint like `POST /v1/webhooks/wp-update`.
-  - [ ]  When the editorial team hits "Publish" in WordPress, WordPress sends a ping to this endpoint, and your Node.js server instantly flushes its cache (`cache.flushAll()`). The very next student to open the app gets the breaking news instantly.
+- [x] **8.4 Implement Cache Warming (Server Startup)**
+  - [x]  In `src/app.ts` (or a dedicated initialization file), call `fetchFeed(1, 10)` immediately when the server starts. This "warms" the cache so the very first user gets an instant response.
+
+- [x] **8.5 Implement Background Polling (`src/services/polling.ts`)**
+  - [x]  Create a `setInterval` function that runs every 5 minutes.
+  - [x]  The function should silently fetch the latest page of articles from WordPress.
+  - [x]  Compare the `modified` timestamps of the fetched articles against the cached feed.
+  - [x]  If an article is new OR its `modified` timestamp is newer (e.g., an editor fixed a typo), overwrite the `wp_feed_page_1` cache key with the fresh data.
 
 ## Phase 1.8: Final MVP Validation
 

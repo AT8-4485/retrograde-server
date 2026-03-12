@@ -1,5 +1,6 @@
 import request from 'supertest';
 import app from '../src/app';
+import { cache } from '../src/utils/cache';
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -7,11 +8,13 @@ global.fetch = jest.fn();
 describe('GET /v1/feed', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    cache.flushAll(); // Ensure cache is clean for every test
   });
 
   const mockWpPost = {
     id: 123,
     date: '2023-10-01T12:00:00Z',
+    modified: '2023-10-02T12:00:00Z',
     title: { rendered: 'Test Post' },
     excerpt: { rendered: '<p>Test excerpt</p>' },
     content: { rendered: '<p>Test content</p>' },
@@ -79,16 +82,37 @@ describe('GET /v1/feed', () => {
     expect(res.status).toBe(503);
     expect(res.body.type).toBe('https://api.retrogradenews.app/errors/service-unavailable');
   });
+
+  it('should hit the cache on subsequent requests', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'X-WP-TotalPages': '1' }),
+      json: async () => [mockWpPost]
+    });
+
+    // First request - should call fetch
+    await request(app).get('/v1/feed?cursor=1&limit=10');
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    // Second request - should hit cache
+    const res2 = await request(app).get('/v1/feed?cursor=1&limit=10');
+    expect(global.fetch).toHaveBeenCalledTimes(1); // Still 1!
+    expect(res2.status).toBe(200);
+    expect(res2.body.data).toHaveLength(1);
+    expect(res2.body.data[0].id).toBe('123');
+  });
 });
 
 describe('GET /v1/feed/category', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    cache.flushAll(); // Flush cache for these tests too
   });
 
   const mockWpPost = {
     id: 124,
     date: '2023-10-02T12:00:00Z',
+    modified: '2023-10-02T12:00:00Z',
     title: { rendered: 'Category Post' },
     excerpt: { rendered: '<p>Cat excerpt</p>' },
     content: { rendered: '<p>Cat content</p>' },
@@ -122,11 +146,13 @@ describe('GET /v1/feed/category', () => {
 describe('GET /v1/feed/issues/latest', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    cache.flushAll(); // Flush cache for these tests
   });
 
   const mockIssuePost = {
     id: 999,
     date: '2023-10-15T12:00:00Z',
+    modified: '2023-10-15T12:00:00Z',
     title: { rendered: 'October Issue' },
     excerpt: { rendered: '' },
     content: { rendered: '' },
@@ -136,6 +162,7 @@ describe('GET /v1/feed/issues/latest', () => {
   const mockArticlePost = {
     id: 1000,
     date: '2023-10-15T14:00:00Z',
+    modified: '2023-10-15T14:00:00Z',
     title: { rendered: 'Issue Article' },
     excerpt: { rendered: '' },
     content: { rendered: '' },
