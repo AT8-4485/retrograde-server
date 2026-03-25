@@ -4,10 +4,12 @@ import { ZodError } from 'zod';
 describe('Environment Variables Validation', () => {
   it('should pass validation with all required valid variables', () => {
     const validEnv = {
-      FIREBASE_SERVICE_ACCOUNT: 'dummy-service-account',
+      WORKOS_API_KEY: 'sk_test_123',
+      WORKOS_CLIENT_ID: 'client_123',
       DATABASE_URL: 'file:./test.db',
       WORDPRESS_API_BASE_URL: 'http://retrograde.local',
       JWT_SECRET: 'super-secret',
+      JWT_REFRESH_SECRET: 'super-refresh-secret',
       EXPO_ACCESS_TOKEN: 'expo-token',
       PORT: '3000',
     };
@@ -17,10 +19,12 @@ describe('Environment Variables Validation', () => {
 
   it('should throw a ZodError if a required variable is missing', () => {
     const invalidEnv = {
-      FIREBASE_SERVICE_ACCOUNT: 'dummy-service-account',
+      WORKOS_API_KEY: 'sk_test_123',
+      WORKOS_CLIENT_ID: 'client_123',
       // DATABASE_URL is missing
       WORDPRESS_API_BASE_URL: 'http://retrograde.local',
       JWT_SECRET: 'super-secret',
+      JWT_REFRESH_SECRET: 'super-refresh-secret',
       EXPO_ACCESS_TOKEN: 'expo-token',
     };
 
@@ -29,10 +33,12 @@ describe('Environment Variables Validation', () => {
 
   it('should throw if WORDPRESS_API_BASE_URL is not a valid URL', () => {
     const invalidEnv = {
-      FIREBASE_SERVICE_ACCOUNT: 'dummy-service-account',
+      WORKOS_API_KEY: 'sk_test_123',
+      WORKOS_CLIENT_ID: 'client_123',
       DATABASE_URL: 'file:./test.db',
       WORDPRESS_API_BASE_URL: 'not-a-valid-url',
       JWT_SECRET: 'super-secret',
+      JWT_REFRESH_SECRET: 'super-refresh-secret',
       EXPO_ACCESS_TOKEN: 'expo-token',
     };
 
@@ -46,10 +52,12 @@ describe('Environment Variables Validation', () => {
 
   it('should default PORT to 3000 if not provided', () => {
     const envWithoutPort = {
-      FIREBASE_SERVICE_ACCOUNT: 'dummy',
+      WORKOS_API_KEY: 'sk_test_123',
+      WORKOS_CLIENT_ID: 'client_123',
       DATABASE_URL: 'file:./test.db',
       WORDPRESS_API_BASE_URL: 'http://retrograde.local',
       JWT_SECRET: 'super-secret',
+      JWT_REFRESH_SECRET: 'super-refresh-secret',
       EXPO_ACCESS_TOKEN: 'expo-token',
     };
 

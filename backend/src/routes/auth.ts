@@ -1,13 +1,18 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { verifyFirebaseToken, refreshTokens, logout } from '../controllers/auth';
-import { publicLimiter, authLimiter } from '../middleware/rateLimiter';
+import { requestOtp, verifyOtp, refreshTokens, logout } from '../controllers/auth';
+import { publicLimiter, authLimiter, otpLimiter } from '../middleware/rateLimiter';
 import { ApiError } from '../middleware/errorHandler';
 
 const router = Router();
 
-const verifySchema = z.object({
-  firebaseIdToken: z.string().min(1, 'Firebase ID Token is required'),
+const requestOtpSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+const verifyOtpSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  code: z.string().min(1, 'OTP code is required'),
 });
 
 const refreshSchema = z.object({
@@ -23,7 +28,8 @@ const validateBody = (schema: z.ZodSchema) => (req: Request, res: Response, next
   next();
 };
 
-router.post('/verify', publicLimiter, validateBody(verifySchema), verifyFirebaseToken);
+router.post('/request-otp', otpLimiter, validateBody(requestOtpSchema), requestOtp);
+router.post('/verify-otp', publicLimiter, validateBody(verifyOtpSchema), verifyOtp);
 router.post('/refresh', publicLimiter, validateBody(refreshSchema), refreshTokens);
 router.post('/logout', authLimiter, validateBody(refreshSchema), logout);
 

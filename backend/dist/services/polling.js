@@ -8,6 +8,7 @@ const startBackgroundPolling = () => {
     setInterval(async () => {
         try {
             // 1. Fetch the latest page directly from WP (bypassing our node-cache)
+            console.log('🔍 Checking for WordPress updates...');
             const freshFeed = await (0, wordpress_1.fetchFeed)(1, 10, true);
             const freshArticles = freshFeed.data;
             if (freshArticles.length === 0)
@@ -42,6 +43,9 @@ const startBackgroundPolling = () => {
                 cache_1.cache.flushAll();
                 // Save the freshly fetched data back into the cache to warm it
                 cache_1.cache.set(cacheKey, freshFeed);
+            }
+            else {
+                console.log('✅ No updates detected on WordPress.');
             }
         }
         catch (error) {

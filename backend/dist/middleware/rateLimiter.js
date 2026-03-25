@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.otpLimiter = exports.authLimiter = exports.publicLimiter = void 0;
 const express_rate_limit_1 = require("express-rate-limit");
 const errorHandler_1 = require("./errorHandler");
-const limitReachedHandler = (req, res, next) => {
-    next(new errorHandler_1.ApiError(429, 'https://api.retrogradenews.app/errors/too-many-requests', 'Too Many Requests', 'Rate limit exceeded. Please try again later.'));
+const limitReachedHandler = (req, res, next, options) => {
+    next(new errorHandler_1.ApiError(429, 'https://api.retrogradenews.app/errors/too-many-requests', 'Too Many Requests', options.message || 'Rate limit exceeded. Please try again later.'));
 };
 /**
  * Public Unauthenticated Tier
@@ -31,11 +31,11 @@ exports.authLimiter = (0, express_rate_limit_1.rateLimit)({
     statusCode: 429,
     message: 'Authenticated rate limit exceeded. Please try again later.',
     handler: limitReachedHandler,
-    keyGenerator: (req) => {
+    keyGenerator: (req, res) => {
         // Note: Once auth middleware is injecting `req.user`, this should prioritize 
         // user ID over IP to accurately track the limit across devices
-        // return req.user?.id || req.ip;
-        return req.ip || 'unknown';
+        // return (req as any).user?.id || ipKeyGenerator(req, res);
+        return (0, express_rate_limit_1.ipKeyGenerator)(req, res);
     },
 });
 /**
@@ -50,12 +50,12 @@ exports.otpLimiter = (0, express_rate_limit_1.rateLimit)({
     statusCode: 429,
     message: 'Too many OTP requests for this email. Please try again in 15 minutes.',
     handler: limitReachedHandler,
-    keyGenerator: (req) => {
+    keyGenerator: (req, res) => {
         // Check if email is in the request body for POST /auth/otp
         if (req.body && req.body.email) {
             return req.body.email;
         }
         // Fallback to IP if body parsing failed or email is missing
-        return req.ip || 'unknown';
+        return (0, express_rate_limit_1.ipKeyGenerator)(req, res);
     },
 });

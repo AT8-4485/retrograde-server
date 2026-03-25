@@ -1,10 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyAndIssueTokens, refreshAccessToken, revokeSession } from '../services/auth';
+import { sendOtp, verifyAndIssueTokens, refreshAccessToken, revokeSession } from '../services/auth';
 
-export const verifyFirebaseToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const requestOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { firebaseIdToken } = req.body;
-    const { user, tokens } = await verifyAndIssueTokens(firebaseIdToken);
+    const { email } = req.body;
+    await sendOtp(email);
+
+    res.json({
+      message: 'If the email exists, a one-time code has been sent.',
+      expiresInSeconds: 600
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email, code } = req.body;
+    const { user, tokens } = await verifyAndIssueTokens(email, code);
 
     res.json({
       user,

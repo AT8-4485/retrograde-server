@@ -1,11 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logout = exports.refreshTokens = exports.verifyFirebaseToken = void 0;
+exports.logout = exports.refreshTokens = exports.verifyOtp = exports.requestOtp = void 0;
 const auth_1 = require("../services/auth");
-const verifyFirebaseToken = async (req, res, next) => {
+const requestOtp = async (req, res, next) => {
     try {
-        const { firebaseIdToken } = req.body;
-        const { user, tokens } = await (0, auth_1.verifyAndIssueTokens)(firebaseIdToken);
+        const { email } = req.body;
+        await (0, auth_1.sendOtp)(email);
+        res.json({
+            message: 'If the email exists, a one-time code has been sent.',
+            expiresInSeconds: 600
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.requestOtp = requestOtp;
+const verifyOtp = async (req, res, next) => {
+    try {
+        const { email, code } = req.body;
+        const { user, tokens } = await (0, auth_1.verifyAndIssueTokens)(email, code);
         res.json({
             user,
             tokens
@@ -15,7 +29,7 @@ const verifyFirebaseToken = async (req, res, next) => {
         next(error);
     }
 };
-exports.verifyFirebaseToken = verifyFirebaseToken;
+exports.verifyOtp = verifyOtp;
 const refreshTokens = async (req, res, next) => {
     try {
         const { refreshToken } = req.body;

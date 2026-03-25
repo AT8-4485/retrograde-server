@@ -17,7 +17,7 @@ Stick to these technologies. Do not substitute without explicit permission.
 Layer	Technology
 Runtime / Framework	Node.js + Express (TypeScript)
 ORM / Database	Prisma + SQLite
-Authentication	Firebase Admin SDK (OTC/JWT)
+Authentication	WorkOS (Magic Auth OTP / JWT)
 Validation	Zod (for Config & API Requests)
 Security	Helmet, Express-Rate-Limit
 Error Standards	RFC 9457 (Problem Details for HTTP APIs)
@@ -44,7 +44,7 @@ Logic Isolation: * Routes: Define endpoints and attach middleware.
 
 Controllers: Handle request/response orchestration.
 
-Services: Contain the actual business logic (e.g., WordPress stripping, Firebase verification).
+Services: Contain the actual business logic (e.g., WordPress stripping, WorkOS verification).
 
 Error Handling: Every catch block must pass the error to the global errorHandler middleware. Never send raw error strings to the client.
 
@@ -87,7 +87,7 @@ Acknowledgment: By proceeding, the AI agent agrees to these constraints. Failure
 
 - [x] **1.3 Strict Environment Validation**
   - [x]  Implement `src/utils/config.ts` using Zod to validate all Section 11 variables.
-  - [x]  Ensure the process exits with code 1 if `FIREBASE_SERVICE_ACCOUNT` or `DATABASE_URL` is missing.
+  - [x]  Ensure the process exits with code 1 if `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, or `DATABASE_URL` is missing.
 
 - [ ] **1.4 Basic Server Setup**
   - [x]  Configure `app.ts` with security middleware (`helmet`).
@@ -171,12 +171,12 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
   - [x]  Update `tests/feed.test.ts` to mock the new routes.
   - [x]  Add a specific test for `/v1/feed/issues/latest` to ensure it successfully orchestrates the dual-fetch (fetching the issue, then fetching the articles for that issue's date).
 
-## Phase 1.5: Passwordless Authentication (Client-Led Flow + Stateful Sessions)
+## Phase 1.5: Passwordless Authentication (WorkOS Magic Auth + Stateful Sessions)
 
-- [x] **6.1 Firebase Admin Integration & Dependencies**
-  - [x]  Install `firebase-admin`, `jsonwebtoken`, and `uuid` (plus `@types/jsonwebtoken` for dev).
-  - [x]  Add `JWT_SECRET` and `JWT_REFRESH_SECRET` to the Zod schema in `src/utils/config.ts`.
-  - [x]  Initialize the Firebase Admin SDK in `src/utils/firebase.ts` using the `FIREBASE_SERVICE_ACCOUNT` config.
+- [x] **6.1 WorkOS Integration & Dependencies**
+  - [x]  Install `@workos-inc/node`, `jsonwebtoken`, and `uuid` (plus `@types/jsonwebtoken` for dev).
+  - [x]  Add `JWT_SECRET`, `JWT_REFRESH_SECRET`, `WORKOS_API_KEY`, and `WORKOS_CLIENT_ID` to the Zod schema in `src/utils/config.ts`.
+  - [x]  Initialize the WorkOS SDK in `src/utils/workos.ts` using the config.
 
 - [x] **6.2 Database Schema Update (Stateful Sessions)**
   - [x]  Update `prisma/schema.prisma` to include a `Session` model. It should include `id` (UUIDv7), `userId` (relation to User), `jti` (String, unique), and `expiresAt` (DateTime).
@@ -184,8 +184,8 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
   - [x]  Update `src/services/user.ts` (or create `src/services/session.ts`) to handle creating, finding, and deleting sessions.
 
 - [x] **6.3 Token Verification & Issuance**
-  - [x]  Create `POST /v1/auth/verify` in `src/routes/auth.ts`.
-  - [x]  Verify the `firebaseIdToken` using `admin.auth().verifyIdToken(token)` and extract the email.
+  - [x]  Create `POST /v1/auth/request-otp` to send a Magic Auth code via WorkOS (`sendMagicAuthCode`).
+  - [x]  Create `POST /v1/auth/verify-otp` to verify the code via WorkOS (`authenticateWithMagicAuth`) and extract the email.
   - [x]  Check the SQLite database; if the email is new, auto-provision a new User record (UUIDv7).
   - [x]  Generate a short-lived **Access Token** (e.g., 15m) using `JWT_SECRET`.
   - [x]  Generate a unique `jti` (UUIDv7). Create a long-lived **Refresh Token** (e.g., 60d) containing this `jti` using `JWT_REFRESH_SECRET`.
@@ -249,3 +249,13 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
 
 - [ ] **9.2 API Documentation Check**
   - [ ]  Ensure all Phase 1 endpoints match the 8.0 API Reference in the spec exactly.
+
+  What are the next steps needed to host it onto a VPS?
+To transition this from a local development environment to a live VPS, you'll need to do the following:
+1. Server Provisioning: SSH into your VPS, install Node.js (v18+), npm, and pm2 (a process manager to keep the app running forever).
+2. Database Preparation: It currently uses SQLite (dev.db). While you can use SQLite on a VPS by persisting the file, it is highly recommended to migrate your Prisma schema to PostgreSQL or MySQL for production concurrency.
+3. Deploy Codebase: Clone the repo to the VPS, run npm install, and generate the production build using npm run build.
+4. Environment Variables: Create a production .env file containing your live DATABASE_URL, JWT_SECRET, WORKOS_API_KEY, WORKOS_CLIENT_ID, and your real WORDPRESS_API_BASE_URL.
+5. Run Migrations: Run npx prisma migrate deploy to initialize your production database schema.
+6. Start the App: Start the compiled server using pm2 start dist/server.js.
+7. Nginx & HTTPS (Certbot): Install Nginx and configure it as a reverse proxy to forward external traffic (ports 80/443) to your Node application's internal port. Finally, run Let's Encrypt (certbot) to automatically generate and attach an SSL certificate to your Nginx configuration. This will give you the complete HTTPS protection you require.

@@ -25,7 +25,7 @@
 The Retrograde News middleware service is an application server that acts as a single gateway between the mobile client and external data sources. Its primary architectural purpose is to intercept mobile client requests, strip redundant web metadata, and return optimized JSON. The app should be fully usable without an account, and the core reading experience is completely anonymous.
 
 **Core Features:**
-*   Authenticates users via a passwordless email one-time-code (OTC) flow.
+*   Authenticates users via a passwordless email one-time-password (OTP) flow.
 *   Manages per-user bookmarks.
 *   Delivers push notifications via Expo Push.
 *   Hosts daily interactive games with social leaderboards and streaks.
@@ -38,7 +38,7 @@ The Retrograde News middleware service is an application server that acts as a s
 | :--- | :--- | :--- |
 | **API Gateway** | Node.js + Express | Acts as the intermediary layer and data transformation service. |
 | **Primary Content Store** | WordPress CMS + MySQL | Acts as the single source of truth for all journalistic content. Remains untouched by mobile devs to preserve the editorial team's workflow. |
-| **Authentication** | Firebase Admin SDK | Secures the backend for user accounts (OAuth/JWT). Handles the passwordless OTC flow. |
+| **Authentication** | WorkOS | Secures the backend for user accounts (Magic Auth OTP / JWT). Handles the passwordless OTP email flow. |
 | **Notifications** | Expo Notifications | The Expo Push Service abstracts over APNs and FCM, allowing the Node.js server to send a single API request rather than managing platform-specific integrations. |
 | **Media Delivery** | Cloudflare CDN | Caches and serves high-resolution article thumbnails and assets to reduce latency and offload bandwidth from the primary WordPress VPS. |
 | **User Info** | SQLite | Stores user data so they can be retrieved. |
@@ -60,7 +60,7 @@ backend/
 │   │   └── proxy.ts
 │   ├── controllers/
 │   ├── middleware/
-│   │   ├── auth.ts          # Validates OTC tokens
+│   │   ├── auth.ts          # Validates OTP tokens
 │   │   ├── errorHandler.ts  # Formats to RFC 9457
 │   │   └── rateLimiter.ts   
 │   ├── services/
@@ -91,7 +91,7 @@ While journalistic content is stored in WordPress, user-specific data must be st
 **Goal:** Deliver core reading, user authentication, and data transformation proxying.
 
 *   **WP Proxy:** Build the `wordpress.ts` service that queries the WordPress API, strips metadata, and serves JSON to the client.
-*   **Authentication:** Implement `POST /v1/auth/otp` and `POST /v1/auth/verify` for passwordless login. If an account does not exist, create one automatically on the first successful verification.
+*   **Authentication:** Implement `POST /v1/auth/request-otp` and `POST /v1/auth/verify-otp` for passwordless login. If an account does not exist, create one automatically on the first successful verification.
 *   **Bookmarks:** Implement CRUD operations for user bookmarks. Bookmarks require authentication.
 *   **Push Notifications:** Build endpoints to register/unregister tokens and manage preferences. Integrate with Expo Push Service.
 *   **Database:** User database setup, schema.
@@ -115,12 +115,12 @@ All endpoints live under the versioned base path: `https://api.retrogradenews.ap
 *   **IDs & Timestamps:** UUIDv7 strings and ISO 8601 timestamps.
 *   **Pagination Envelope:** List endpoints return a standard envelope containing `data` (array), `cursor` (string or null), and `hasMore` (boolean).
 
-### 8.1 Authentication Routes (Passwordless OTC)
+### 8.1 Authentication Routes (Passwordless OTP)
 
 | Endpoint | Method / Path | Details |
 | :--- | :--- | :--- |
-| **Request OTC** | `POST /auth/otp` | **Auth:** Public.<br>**Body:** `{ "email": "string" }`.<br>**Success (200):** Returns `{ "message": "...", "expiresInSeconds": 300 }`. Identical response whether email exists or not to prevent enumeration. |
-| **Verify OTC** | `POST /auth/verify` | **Auth:** Public.<br>**Body:** `{ "email": "string", "code": "string" }`.<br>**Success (200):** Returns `{ accessToken, refreshToken, expiresIn, user }`. Creates an account automatically on first successful verification if one does not exist. |
+| **Request OTP** | `POST /auth/request-otp` | **Auth:** Public.<br>**Body:** `{ "email": "string" }`.<br>**Success (200):** Returns `{ "message": "...", "expiresInSeconds": 300 }`. Identical response whether email exists or not to prevent enumeration. |
+| **Verify OTP** | `POST /auth/verify-otp` | **Auth:** Public.<br>**Body:** `{ "email": "string", "code": "string" }`.<br>**Success (200):** Returns `{ accessToken, refreshToken, expiresIn, user }`. Creates an account automatically on first successful verification if one does not exist. |
 | **Refresh Tokens** | `POST /auth/refresh` | **Auth:** Public.<br>**Body:** `{ "refreshToken": "string" }`.<br>**Success (200):** Returns new tokens and user object. |
 | **Log Out** | `POST /auth/logout` | **Auth:** Public.<br>**Body:** `{ "refreshToken": "string" }`.<br>**Success (204):** No content. |
 
@@ -191,7 +191,8 @@ All API errors must adhere to the RFC 9457 Problem Details format.
 Config must be validated at startup; the app should fail fast if required variables are missing.
 
 ```env
-FIREBASE_SERVICE_ACCOUNT=
+WORKOS_API_KEY=
+WORKOS_CLIENT_ID=
 WORDPRESS_API_BASE_URL=
 DATABASE_URL= # For the middleware's user/bookmark DB
 JWT_SECRET=
@@ -201,7 +202,7 @@ EXPO_ACCESS_TOKEN=
 ## 12. Glossary
 
 *   **Middleware:** The intermediary Node.js server that transforms data between the WordPress single source of truth and the mobile client.
-*   **OTC:** One-Time Code, used for the passwordless authentication flow.
+*   **OTP:** One-Time Password, used for the passwordless authentication flow.
 *   **PDS (Personal Data Server):** The AT Protocol server hosting accounts for editorial staff.
 
 ## 13. Agent Instructions & Constraints

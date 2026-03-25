@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { v7 as uuidv7 } from 'uuid';
-import { firebaseAuth } from '../utils/firebase';
+import { workos } from '../utils/workos';
 import { config } from '../utils/config';
 import { findUserByEmail, createUser } from './user';
 import { User } from '@prisma/client';
@@ -13,28 +13,53 @@ export interface AuthTokens {
 }
 
 /**
- * Validates a Firebase token, provisions the user if they do not exist,
+ * Sends a one-time passcode to the provided email address via WorkOS Magic Auth.
+ */
+export const sendOtp = async (email: string): Promise<void> => {
+  // Local Test Mode Bypass
+  if ((config.NODE_ENV === 'test') && email === 'leon.zh113@gmail.com') {
+    return; // Bypass WorkOS completely for the test user
+  }
+
+  try {
+    await workos.userManagement.createMagicAuth({
+      email,
+    });
+  } catch (error) {
+    // We swallow errors here or log them so we don't enumerate emails to attackers
+    console.error('WorkOS createMagicAuth error:', error);
+  }
+};
+
+/**
+ * Validates a WorkOS OTP, provisions the user if they do not exist,
  * and issues local Access and Refresh tokens.
  */
-export const verifyAndIssueTokens = async (firebaseIdToken: string): Promise<{ user: User, tokens: AuthTokens }> => {
+export const verifyAndIssueTokens = async (email: string, code: string): Promise<{ user: User, tokens: AuthTokens }> => {
   try {
-    let email = '';
+    let verifiedEmail = email;
 
     // Local Test Mode Bypass
-    if ((config.NODE_ENV === 'dev' || config.NODE_ENV === 'test') && firebaseIdToken === 'MOCK_TOKEN_LEON@TEST.COM') {
-      email = 'leon@test.com';
+    if ((config.NODE_ENV === 'test') && email === 'leon.zh113@gmail.com' && code === '000000') {
+      verifiedEmail = 'leon.zh113@gmail.com';
     } else {
-      const decodedToken = await firebaseAuth.verifyIdToken(firebaseIdToken);
-      if (!decodedToken.email) {
-        throw new ApiError(400, 'https://api.retrogradenews.app/errors/bad-request', 'Bad Request', 'Firebase token does not contain an email');
+      const response = await workos.userManagement.authenticateWithMagicAuth({
+        clientId: config.WORKOS_CLIENT_ID,
+        code,
+        email,
+      });
+
+      if (!response.user || !response.user.email) {
+        throw new ApiError(400, 'https://api.retrogradenews.app/errors/bad-request', 'Bad Request', 'Authentication failed to return an email');
       }
-      email = decodedToken.email;
+      
+      verifiedEmail = response.user.email;
     }
 
-    let user = await findUserByEmail(email);
+    let user = await findUserByEmail(verifiedEmail);
 
     if (!user) {
-      user = await createUser(email);
+      user = await createUser(verifiedEmail);
     }
 
     const tokens = await generateLocalTokens(user.id);
@@ -43,7 +68,7 @@ export const verifyAndIssueTokens = async (firebaseIdToken: string): Promise<{ u
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError(401, 'https://api.retrogradenews.app/errors/unauthorized', 'Unauthorized', 'Invalid Firebase ID token');
+    throw new ApiError(401, 'https://api.retrogradenews.app/errors/unauthorized', 'Unauthorized', 'Invalid or expired OTP code');
   }
 };
 
