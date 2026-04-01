@@ -250,12 +250,8 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
 - [ ] **9.2 API Documentation Check**
   - [ ]  Ensure all Phase 1 endpoints match the 8.0 API Reference in the spec exactly.
 
-  What are the next steps needed to host it onto a VPS?
-To transition this from a local development environment to a live VPS, you'll need to do the following:
-1. Server Provisioning: SSH into your VPS, install Node.js (v18+), npm, and pm2 (a process manager to keep the app running forever).
-2. Database Preparation: It currently uses SQLite (dev.db). While you can use SQLite on a VPS by persisting the file, it is highly recommended to migrate your Prisma schema to PostgreSQL or MySQL for production concurrency.
-3. Deploy Codebase: Clone the repo to the VPS, run npm install, and generate the production build using npm run build.
-4. Environment Variables: Create a production .env file containing your live DATABASE_URL, JWT_SECRET, WORKOS_API_KEY, WORKOS_CLIENT_ID, and your real WORDPRESS_API_BASE_URL.
-5. Run Migrations: Run npx prisma migrate deploy to initialize your production database schema.
-6. Start the App: Start the compiled server using pm2 start dist/server.js.
-7. Nginx & HTTPS (Certbot): Install Nginx and configure it as a reverse proxy to forward external traffic (ports 80/443) to your Node application's internal port. Finally, run Let's Encrypt (certbot) to automatically generate and attach an SSL certificate to your Nginx configuration. This will give you the complete HTTPS protection you require.
+## MVP 2
+
+## Phase 2.0: Auth Issues
+- [ ] **2.1 Issues**
+  - [ ] Create check for if user exists in db before sending otp verification
