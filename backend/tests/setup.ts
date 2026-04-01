@@ -8,10 +8,12 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.$executeRawUnsafe('DELETE FROM "Bookmark";');
-  await prisma.$executeRawUnsafe('DELETE FROM "GameResult";');
-  await prisma.$executeRawUnsafe('DELETE FROM "PushToken";');
-  await prisma.$executeRawUnsafe('DELETE FROM "User";');
+  // Use Prisma's deleteMany for safer cross-database cascading deletes
+  await prisma.bookmark.deleteMany({});
+  await prisma.gameResult.deleteMany({});
+  await prisma.pushToken.deleteMany({});
+  await prisma.session.deleteMany({});
+  await prisma.user.deleteMany({});
 });
 
 afterAll(async () => {

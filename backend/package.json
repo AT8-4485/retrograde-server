@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:migrate": "prisma migrate dev",
+    "pretest": "dotenv -e .envtest -- prisma db push --accept-data-loss",
+    "test": "dotenv -e .envtest -- jest --runInBand",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
@@ -39,6 +43,7 @@
     "@types/pino": "^7.0.4",
     "@types/supertest": "^7.2.0",
     "@types/uuid": "^10.0.0",
+    "dotenv-cli": "^11.0.0",
     "jest": "^30.2.0",
     "prisma": "^6.19.2",
     "supertest": "^7.2.2",

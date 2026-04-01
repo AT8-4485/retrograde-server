@@ -16,7 +16,7 @@ Stick to these technologies. Do not substitute without explicit permission.
 
 Layer	Technology
 Runtime / Framework	Node.js + Express (TypeScript)
-ORM / Database	Prisma + SQLite
+ORM / Database	Prisma + PostgreSQL
 Authentication	WorkOS (Magic Auth OTP / JWT)
 Validation	Zod (for Config & API Requests)
 Security	Helmet, Express-Rate-Limit
@@ -106,10 +106,10 @@ Acknowledgment: By proceeding, the AI agent agrees to these constraints. Failure
 - [x] **2.3 Logging Utility**
   - [x]  Implement `src/utils/logger.ts` (using Winston or Pino) for standardized request/error logging.
 
-## Phase 1.2: Database & User Persistence (SQLite)
+## Phase 1.2: Database & User Persistence (PostgreSQL)
 
 - [x] **3.1 Schema Definition**
-  - [x]  Initialize Prisma with SQLite.
+  - [x]  Initialize Prisma with PostgreSQL.
   - [x]  Create migrations for User, Bookmark, and PushToken tables.
   - [x]  Ensure `id` fields utilize UUIDv7 logic.
 
@@ -186,10 +186,10 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
 - [x] **6.3 Token Verification & Issuance**
   - [x]  Create `POST /v1/auth/request-otp` to send a Magic Auth code via WorkOS (`sendMagicAuthCode`).
   - [x]  Create `POST /v1/auth/verify-otp` to verify the code via WorkOS (`authenticateWithMagicAuth`) and extract the email.
-  - [x]  Check the SQLite database; if the email is new, auto-provision a new User record (UUIDv7).
+  - [x]  Check the PostgreSQL database; if the email is new, auto-provision a new User record (UUIDv7).
   - [x]  Generate a short-lived **Access Token** (e.g., 15m) using `JWT_SECRET`.
   - [x]  Generate a unique `jti` (UUIDv7). Create a long-lived **Refresh Token** (e.g., 60d) containing this `jti` using `JWT_REFRESH_SECRET`.
-  - [x]  Save the `jti` and user relationship to the `Session` table in SQLite.
+  - [x]  Save the `jti` and user relationship to the `Session` table in PostgreSQL.
   - [x]  Return both the Access Token and Refresh Token to the client.
 
 - [x] **6.4 Refresh & Revocation (Logout) Routes**

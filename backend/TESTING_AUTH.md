@@ -25,7 +25,7 @@ Send the mock code to the verify OTP endpoint. This will create the user in SQLi
 ```bash
 curl -X POST http://localhost:3000/v1/auth/verify-otp \
   -H "Content-Type: application/json" \
-  -d '{"email":"leon.zh113@gmail.com", "code": "000000"}' | jq
+  -d '{"email":"leon.zh113@gmail.com", "code": "023864"}' | jq
 ```
 
 **What you will see:** A JSON object containing `{ user, tokens: { accessToken, refreshToken } }`. The `accessToken` expires in 15 minutes, while the `refreshToken` lasts for 60 days.

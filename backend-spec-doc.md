@@ -41,7 +41,7 @@ The Retrograde News middleware service is an application server that acts as a s
 | **Authentication** | WorkOS | Secures the backend for user accounts (Magic Auth OTP / JWT). Handles the passwordless OTP email flow. |
 | **Notifications** | Expo Notifications | The Expo Push Service abstracts over APNs and FCM, allowing the Node.js server to send a single API request rather than managing platform-specific integrations. |
 | **Media Delivery** | Cloudflare CDN | Caches and serves high-resolution article thumbnails and assets to reduce latency and offload bandwidth from the primary WordPress VPS. |
-| **User Info** | SQLite | Stores user data so they can be retrieved. |
+| **User Info** | PostgreSQL | Stores user data so they can be retrieved. |
 | **Hosting** | VPS | Deploys the Node.js/Express server on VPS to host it. |
 
 ## 3. Project File Structure
@@ -79,7 +79,7 @@ backend/
 
 ## 4. Data Models
 
-While journalistic content is stored in WordPress, user-specific data must be stored in the middleware's dedicated database - SQLite.
+While journalistic content is stored in WordPress, user-specific data must be stored in the middleware's dedicated database - PostgreSQL.
 
 *   **User**: Stores `id` (UUIDv7), `email`, `displayName`, `avatarUrl`, `bio`, and `createdAt`.
 *   **Bookmark**: Tied to a user account. Stores `id`, `type` (article, game, post), `title`, `url`, `thumbnailUrl`, and associated metadata.
