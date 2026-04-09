@@ -30,7 +30,7 @@ const validateQuery = (schema: z.ZodSchema) => (req: Request, res: Response, nex
     return next(new ApiError(400, 'https://api.retrogradenews.app/errors/bad-request', 'Bad Request', messages));
   }
   // Optional: override req.query with the coerced/defaulted values
-  req.query = result.data as any;
+  Object.assign(req.query, result.data);
   next();
 };
 

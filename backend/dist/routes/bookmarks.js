@@ -27,7 +27,7 @@ const validateQuery = (schema) => (req, res, next) => {
         return next(new errorHandler_1.ApiError(400, 'https://api.retrogradenews.app/errors/bad-request', 'Bad Request', messages));
     }
     // Optional: override req.query with the coerced/defaulted values
-    req.query = result.data;
+    Object.assign(req.query, result.data);
     next();
 };
 const validateBody = (schema) => (req, res, next) => {
