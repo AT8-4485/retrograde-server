@@ -14,6 +14,7 @@ const envSchema = zod_1.z.object({
     JWT_REFRESH_SECRET: zod_1.z.string().min(1, "JWT_REFRESH_SECRET is required"),
     DATABASE_URL: zod_1.z.string().min(1, "DATABASE_URL is required"),
     WORDPRESS_API_BASE_URL: zod_1.z.string().url("WORDPRESS_API_BASE_URL must be a valid URL"),
+    REDIS_URL: zod_1.z.string().url("REDIS_URL must be a valid Redis URL"),
     EXPO_ACCESS_TOKEN: zod_1.z.string().optional(),
     PORT: zod_1.z.string().optional().default("3000"),
     NODE_ENV: zod_1.z.enum(['dev', 'test', 'production']).default('dev'),

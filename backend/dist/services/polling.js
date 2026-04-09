@@ -7,6 +7,13 @@ const POLLING_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const startBackgroundPolling = () => {
     setInterval(async () => {
         try {
+            // Acquire distributed lock for 60 seconds to prevent thundering herd
+            const lockKey = 'polling_lock';
+            const acquired = await cache_1.cache.acquireLock(lockKey, 60);
+            if (!acquired) {
+                console.log('🔒 Background polling lock is held by another instance or Redis is down. Skipping...');
+                return;
+            }
             // 1. Fetch the latest page directly from WP (bypassing our node-cache)
             console.log('🔍 Checking for WordPress updates...');
             const freshFeed = await (0, wordpress_1.fetchFeed)(1, 10, true);
@@ -22,7 +29,7 @@ const startBackgroundPolling = () => {
                 _embed: 'true'
             });
             const cacheKey = `wp_${defaultParams.toString()}`;
-            const cachedFeed = cache_1.cache.get(cacheKey);
+            const cachedFeed = await cache_1.cache.get(cacheKey);
             let shouldUpdate = false;
             if (!cachedFeed || cachedFeed.data.length === 0) {
                 shouldUpdate = true;
@@ -40,9 +47,9 @@ const startBackgroundPolling = () => {
             // categories, issues, and specific routes are purged of stale data
             if (shouldUpdate) {
                 console.log('🔄 WordPress update detected. Flushing cache and re-warming main feed.');
-                cache_1.cache.flushAll();
+                await cache_1.cache.flushAll();
                 // Save the freshly fetched data back into the cache to warm it
-                cache_1.cache.set(cacheKey, freshFeed);
+                await cache_1.cache.set(cacheKey, freshFeed);
             }
             else {
                 console.log('✅ No updates detected on WordPress.');

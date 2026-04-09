@@ -32,7 +32,7 @@ const fetchFromWP = async (queryParams, bypassCache = false) => {
     queryParams.set('_embed', 'true');
     const cacheKey = `wp_${queryParams.toString()}`;
     if (!bypassCache) {
-        const cachedData = cache_1.cache.get(cacheKey);
+        const cachedData = await cache_1.cache.get(cacheKey);
         if (cachedData) {
             return cachedData;
         }
@@ -52,7 +52,7 @@ const fetchFromWP = async (queryParams, bypassCache = false) => {
         const posts = await response.json();
         const data = dataStripper(posts);
         const payload = { data, totalPages };
-        cache_1.cache.set(cacheKey, payload);
+        await cache_1.cache.set(cacheKey, payload);
         return payload;
     }
     catch (error) {

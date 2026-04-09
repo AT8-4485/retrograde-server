@@ -60,7 +60,7 @@ const fetchFromWP = async (queryParams: URLSearchParams, bypassCache: boolean = 
   const cacheKey = `wp_${queryParams.toString()}`;
 
   if (!bypassCache) {
-    const cachedData = cache.get<{ data: LeanArticle[], totalPages: number }>(cacheKey);
+    const cachedData = await cache.get<{ data: LeanArticle[], totalPages: number }>(cacheKey);
     if (cachedData) {
       return cachedData;
     }
@@ -90,7 +90,7 @@ const fetchFromWP = async (queryParams: URLSearchParams, bypassCache: boolean = 
     const data = dataStripper(posts);
 
     const payload = { data, totalPages };
-    cache.set(cacheKey, payload);
+    await cache.set(cacheKey, payload);
 
     return payload;
   } catch (error) {

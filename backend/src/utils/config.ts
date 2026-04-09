@@ -10,6 +10,7 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET is required"),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   WORDPRESS_API_BASE_URL: z.string().url("WORDPRESS_API_BASE_URL must be a valid URL"),
+  REDIS_URL: z.string().url("REDIS_URL must be a valid Redis URL"),
   EXPO_ACCESS_TOKEN: z.string().optional(),
   PORT: z.string().optional().default("3000"),
   NODE_ENV: z.enum(['dev', 'test', 'production']).default('dev'),
