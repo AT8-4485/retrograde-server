@@ -15,7 +15,7 @@ const notifications_1 = __importDefault(require("./routes/notifications"));
 const app = (0, express_1.default)();
 // Security and utility middleware
 app.use((0, helmet_1.default)());
-app.use(express_1.default.json());
+app.use(express_1.default.json({ limit: '5mb' }));
 // Utilize our Pino structured logger to attach a UUID and track requests
 app.use(logger_1.requestLogger);
 // Note: Morgan can be kept for simple console development logs, but Pino is the source of truth.
