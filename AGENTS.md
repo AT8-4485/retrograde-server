@@ -252,6 +252,5 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
 
 ## MVP 2
 
-## Phase 2.0: Auth Issues
-- [ ] **2.1 Issues**
-  - [ ] Create check for if user exists in db before sending otp verification
+- [ ] Redis implementation over node-cache
+- [ ] Postgress connection pooling
