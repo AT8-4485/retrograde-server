@@ -26,7 +26,24 @@ const validateBody = (schema) => (req, res, next) => {
     }
     next();
 };
+const simulatePushBodySchema = zod_1.z.object({
+    mode: zod_1.z.enum(['raw', 'article']),
+    title: zod_1.z.string().optional(),
+    body: zod_1.z.string().optional(),
+    articleId: zod_1.z.string().optional(),
+}).refine(data => {
+    if (data.mode === 'raw') {
+        return !!data.title && !!data.body;
+    }
+    if (data.mode === 'article') {
+        return !!data.articleId;
+    }
+    return true;
+}, {
+    message: "Raw mode requires title and body. Article mode requires articleId."
+});
 router.post('/token', validateBody(registerTokenBodySchema), notification_1.registerToken);
 router.patch('/preferences', validateBody(updatePreferencesBodySchema), notification_1.updatePreferences);
 router.delete('/token/:tokenId', notification_1.removeToken);
+router.post('/simulate', validateBody(simulatePushBodySchema), notification_1.simulatePush);
 exports.default = router;

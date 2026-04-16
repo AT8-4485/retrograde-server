@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.fetchArticlesByDate = exports.fetchLatestIssue = exports.fetchIssues = exports.fetchFeedByCategory = exports.fetchFeed = void 0;
+exports.fetchArticlesByDate = exports.fetchLatestIssue = exports.fetchIssues = exports.fetchFeedByCategory = exports.fetchFeed = exports.fetchFromWP = void 0;
 const date_fns_1 = require("date-fns");
 const config_1 = require("../utils/config");
 const errorHandler_1 = require("../middleware/errorHandler");
@@ -61,13 +61,14 @@ const fetchFromWP = async (queryParams, bypassCache = false) => {
         throw new errorHandler_1.ApiError(503, 'https://api.retrogradenews.app/errors/service-unavailable', 'Service Unavailable', 'Could not connect to WordPress CMS');
     }
 };
+exports.fetchFromWP = fetchFromWP;
 const fetchFeed = async (page = 1, limit = 10, bypassCache = false) => {
     const params = new URLSearchParams({
         page: String(page),
         per_page: String(limit),
         categories_exclude: String(wordpressTaxonomies_1.WP_CATEGORIES.ISSUE)
     });
-    return fetchFromWP(params, bypassCache);
+    return (0, exports.fetchFromWP)(params, bypassCache);
 };
 exports.fetchFeed = fetchFeed;
 const fetchFeedByCategory = async (categoryIds, page = 1, limit = 10) => {
@@ -79,7 +80,7 @@ const fetchFeedByCategory = async (categoryIds, page = 1, limit = 10) => {
     if (categoryIds && categoryIds.length > 0) {
         params.set('categories', categoryIds.join(','));
     }
-    return fetchFromWP(params);
+    return (0, exports.fetchFromWP)(params);
 };
 exports.fetchFeedByCategory = fetchFeedByCategory;
 const fetchIssues = async (page = 1, limit = 10) => {
@@ -88,7 +89,7 @@ const fetchIssues = async (page = 1, limit = 10) => {
         per_page: String(limit),
         categories: String(wordpressTaxonomies_1.WP_CATEGORIES.ISSUE)
     });
-    return fetchFromWP(params);
+    return (0, exports.fetchFromWP)(params);
 };
 exports.fetchIssues = fetchIssues;
 const fetchLatestIssue = async () => {
@@ -96,7 +97,7 @@ const fetchLatestIssue = async () => {
         per_page: '1',
         categories: String(wordpressTaxonomies_1.WP_CATEGORIES.ISSUE)
     });
-    const { data } = await fetchFromWP(params);
+    const { data } = await (0, exports.fetchFromWP)(params);
     return data.length > 0 ? data[0] : null;
 };
 exports.fetchLatestIssue = fetchLatestIssue;
@@ -110,6 +111,6 @@ const fetchArticlesByDate = async (dateString) => {
         categories_exclude: String(wordpressTaxonomies_1.WP_CATEGORIES.ISSUE),
         per_page: '100' // Get all posts for the issue
     });
-    return fetchFromWP(params);
+    return (0, exports.fetchFromWP)(params);
 };
 exports.fetchArticlesByDate = fetchArticlesByDate;

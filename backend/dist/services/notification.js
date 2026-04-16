@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deletePushToken = exports.updateTokenPreferences = exports.upsertPushToken = void 0;
+exports.getUserPushTokens = exports.deletePushToken = exports.updateTokenPreferences = exports.upsertPushToken = void 0;
 const db_1 = require("../utils/db");
 const uuid_1 = require("uuid");
 const upsertPushToken = async (userId, data) => {
@@ -46,3 +46,9 @@ const deletePushToken = async (userId, tokenId) => {
     });
 };
 exports.deletePushToken = deletePushToken;
+const getUserPushTokens = async (userId) => {
+    return db_1.db.pushToken.findMany({
+        where: { userId },
+    });
+};
+exports.getUserPushTokens = getUserPushTokens;

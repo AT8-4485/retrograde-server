@@ -52,7 +52,7 @@ const dataStripper = (posts: WPPost[]): LeanArticle[] => {
   });
 };
 
-const fetchFromWP = async (queryParams: URLSearchParams, bypassCache: boolean = false): Promise<{ data: LeanArticle[], totalPages: number }> => {
+export const fetchFromWP = async (queryParams: URLSearchParams, bypassCache: boolean = false): Promise<{ data: LeanArticle[], totalPages: number }> => {
   const baseUrl = config.WORDPRESS_API_BASE_URL;
   // Automatically append _embed=true to get author/media in the same request
   queryParams.set('_embed', 'true');

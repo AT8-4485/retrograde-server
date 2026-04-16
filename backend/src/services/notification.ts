@@ -53,3 +53,9 @@ export const deletePushToken = async (userId: string, tokenId: string): Promise<
     },
   });
 };
+
+export const getUserPushTokens = async (userId: string) => {
+  return db.pushToken.findMany({
+    where: { userId },
+  });
+};
