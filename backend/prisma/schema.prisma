@@ -19,6 +19,7 @@ model User {
   gameResults GameResult[]
   pushTokens  PushToken[]
   sessions    Session[]
+  userStats   UserGameStats[]
 }
 
 model Session {
@@ -44,20 +45,63 @@ model Bookmark {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model GameResult {
-  id             String   @id
-  challengeId    String
-  userId         String?  // Nullable for anonymous play
-  score          Int
-  maxScore       Int?
-  durationMs     Int
-  rank           Int?
-  streak         Int?
-  isPersonalBest Boolean?
-  answers        String?  // Stored as JSON string array
-  createdAt      DateTime @default(now())
+model Game {
+  id          String       @id // e.g., "wordle", "boggle", "crossword", "quiz", "sudoku", "wordsearch"
+  name        String       // e.g., "Wordle", "Boggle", "Crossword", "Quiz", "Sudoku", "Word Search"
+  description String?
+  iconUrl     String?
+  active      Boolean     @default(true)
+  
+  challenges  Challenge[]
+  results     GameResult[]
+  userStats   UserGameStats[]
+}
 
-  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Challenge {
+  id          String    @id // e.g., "wordle-2026-04-22"
+  gameId      String
+  game        Game      @relation(fields: [gameId], references: [id])
+  date        DateTime  @unique // The date this challenge was available
+  data        Json?     // Game-specific puzzle data (e.g., crossword grid, word list)
+  expiresAt   DateTime? // When this challenge expires
+  
+  results     GameResult[]
+}
+
+model GameResult {
+  id             String      @id
+  challengeId    String
+  challenge      Challenge   @relation(fields: [challengeId], references: [id])
+  userId         String?     // Nullable for anonymous play
+  user           User?       @relation(fields: [userId], references: [id])
+  gameId         String?     // Optional field to link directly to game for simpler queries
+  game           Game?       @relation(fields: [gameId], references: [id])
+  score          Int         // Primary score (higher = better)
+  maxScore       Int?        // For percentage calculation
+  durationMs     Int         // Time taken in milliseconds
+  answers        Json?       // Game-specific answers submitted (JSON array)
+  rank           Int?        // Computed rank for this challenge
+  percentile     Float?      // Computed percentile (0-100)
+  isPersonalBest Boolean    @default(false)
+  createdAt      DateTime    @default(now())
+
+  @@index([challengeId])
+  @@index([userId, challengeId])
+}
+
+model UserGameStats {
+  userId        String
+  gameId        String
+  game          Game      @relation(fields: [gameId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
+  gamesPlayed   Int       @default(0)
+  bestScore     Int       @default(0)
+  totalDurationMs BigInt   @default(0)
+  currentStreak Int       @default(0)
+  maxStreak     Int       @default(0)
+  lastPlayedAt  DateTime?
+  
+  @@id([userId, gameId])
 }
 
 model PushToken {
