@@ -12,6 +12,8 @@ const envSchema = z.object({
   WORDPRESS_API_BASE_URL: z.string().url("WORDPRESS_API_BASE_URL must be a valid URL"),
   REDIS_URL: z.string().url("REDIS_URL must be a valid Redis URL"),
   EXPO_ACCESS_TOKEN: z.string().optional(),
+  POSTHOG_PROJECT_TOKEN: z.string().optional(),
+  POSTHOG_HOST: z.string().url().default("https://us.i.posthog.com"),
   PORT: z.string().optional().default("3000"),
   NODE_ENV: z.enum(['dev', 'test', 'production']).default('dev'),
 });

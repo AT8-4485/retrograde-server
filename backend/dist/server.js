@@ -8,6 +8,7 @@ const config_1 = require("./utils/config");
 const wordpress_1 = require("./services/wordpress");
 const polling_1 = require("./services/polling");
 const cache_1 = require("./utils/cache");
+const posthog_1 = require("./utils/posthog");
 const port = config_1.config.PORT;
 const startServer = async () => {
     // Connect to Redis before accepting traffic
@@ -27,6 +28,7 @@ const startServer = async () => {
     // Graceful Shutdown
     const shutdown = async (signal) => {
         console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
+        await posthog_1.posthog.shutdown();
         server.close(async () => {
             console.log('HTTP server closed.');
             await cache_1.cache.quit();

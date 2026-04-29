@@ -157,16 +157,54 @@ curl -X POST "http://localhost:3000/v1/notifications/simulate" \
 
 ---
 
-## 5. Token Refresh
+## 5. Games & Leaderboards
 
-### 5.1 Refresh Access Token
+### 5.3 Submit Game Result (Authenticated)
+```bash
+curl -X POST "http://localhost:3000/v1/games/wordle/results" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "score": 4,
+    "maxScore": 6,
+    "durationMs": 45000,
+    "answers": ["APPLE", "GRAPE", "LEMON", "WORLD"]
+  }'
+```
+
+### 5.4 Submit Game Result (Anonymous)
+```bash
+curl -X POST "http://retrograde-server-production.up.railway.app/v1/games/wordle/results" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "score": 3,
+    "maxScore": 6,
+    "durationMs": 60000,
+    "answers": ["CHAIR", "TABLE", "PLATE"]
+  }'
+```
+
+### 5.5 Get Leaderboard
+```bash
+# periods: daily (default), weekly, alltime
+curl -X GET "http://localhost:3000/v1/games/wordle/leaderboard?period=daily" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+run to view db: railway run npx prisma studio --url postgresql://postgres:cDRtqGlYRciuIBgHuGugPTQfixMFtcZf@interchange.proxy.rlwy.net:59928/railway
+
+
+---
+
+## 6. Token Refresh
+
+### 6.1 Refresh Access Token
 ```bash
 curl -X POST "http://localhost:3000/v1/auth/refresh" \
   -H "Content-Type: application/json" \
   -d '{"refreshToken": "YOUR_REFRESH_TOKEN"}'
 ```
 
-### 5.2 Logout (Revoke Session)
+### 6.2 Logout (Revoke Session)
 ```bash
 curl -X POST "http://localhost:3000/v1/auth/logout" \
   -H "Content-Type: application/json" \
@@ -195,6 +233,11 @@ curl -X POST "http://localhost:3000/v1/auth/logout" \
 | Notifications | Simulate Raw Push | [ ] |
 | Notifications | Simulate Article Push | [ ] |
 | Notifications | Delete Device Token | [ ] |
+| Games | List Games | [ ] |
+| Games | Get Today's Challenge | [ ] |
+| Games | Submit Result (Auth) | [ ] |
+| Games | Submit Result (Anon) | [ ] |
+| Games | Get Leaderboard | [ ] |
 
 ---
 

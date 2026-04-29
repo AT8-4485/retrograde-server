@@ -3,6 +3,7 @@ import { config } from './utils/config';
 import { fetchFeed } from './services/wordpress';
 import { startBackgroundPolling } from './services/polling';
 import { cache } from './utils/cache';
+import { posthog } from './utils/posthog';
 
 const port = config.PORT;
 
@@ -28,6 +29,7 @@ const startServer = async () => {
   // Graceful Shutdown
   const shutdown = async (signal: string) => {
     console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
+    await posthog.shutdown();
     server.close(async () => {
       console.log('HTTP server closed.');
       await cache.quit();

@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getLeaderboard = exports.submitResult = exports.getTodayChallenge = exports.listGames = void 0;
 const gameService = __importStar(require("../services/game"));
+const posthog_1 = require("../utils/posthog");
 const listGames = async (req, res, next) => {
     try {
         const games = await gameService.getGames();
@@ -61,6 +62,24 @@ const submitResult = async (req, res, next) => {
         const gameId = req.params.gameId;
         const userId = req.user?.id || null;
         const result = await gameService.submitGameResult(userId, gameId, req.body);
+        // PostHog Instrumentation
+        const distinctId = req.headers['x-posthog-distinct-id'];
+        const sessionId = req.headers['x-posthog-session-id'];
+        const trackingId = userId || distinctId || 'anonymous';
+        posthog_1.posthog.capture({
+            distinctId: trackingId,
+            event: 'game_result_submitted_server',
+            properties: {
+                $session_id: sessionId,
+                gameId: gameId,
+                score: result.score,
+                durationMs: result.durationMs,
+                isPersonalBest: result.isPersonalBest,
+                rank: result.rank,
+                percentile: result.percentile,
+                authenticated: !!userId
+            }
+        });
         res.status(201).json(result);
     }
     catch (error) {
