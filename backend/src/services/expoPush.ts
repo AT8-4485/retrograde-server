@@ -6,7 +6,7 @@ let expo: Expo | null = null;
 if (config.EXPO_ACCESS_TOKEN) {
   expo = new Expo({ accessToken: config.EXPO_ACCESS_TOKEN });
 } else {
-  console.warn('⚠️ EXPO_ACCESS_TOKEN is missing. Push notifications will be simulated.');
+  console.warn('EXPO_ACCESS_TOKEN is missing. Push notifications will be simulated.');
 }
 
 /**
@@ -38,6 +38,11 @@ export const sendPushNotification = async (
   }
 
   if (messages.length === 0) return;
+
+  if (!config.PUSH_NOTIFICATIONS_ENABLED) {
+    console.log(`[SIMULATED PUSH: disabled] Title: "${title}", Body: "${body}", Targets: ${messages.length}`);
+    return;
+  }
 
   if (!expo) {
     console.log(`[SIMULATED PUSH] Title: "${title}", Body: "${body}", Targets: ${messages.length}`);

@@ -1,17 +1,27 @@
 import { Request, Response, NextFunction } from 'express';
-import { upsertPushToken, updateTokenPreferences, deletePushToken, getUserPushTokens } from '../services/notification';
+import { PushToken } from '@prisma/client';
+import { upsertPushToken, updateTokenPreferences, deletePushToken, deletePushTokenByToken, getUserPushTokens } from '../services/notification';
 import { sendPushNotification } from '../services/expoPush';
 import { fetchFromWP } from '../services/wordpress';
 import { ApiError } from '../middleware/errorHandler';
 
+const serializePublicPushToken = (pushToken: PushToken) => ({
+  id: pushToken.id,
+  token: pushToken.token,
+  platform: pushToken.platform,
+  deviceName: pushToken.deviceName,
+  createdAt: pushToken.createdAt,
+  lastSeenAt: pushToken.lastSeenAt,
+});
+
 export const registerToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
     const { token, platform, deviceName } = req.body;
 
     const pushToken = await upsertPushToken(userId, { token, platform, deviceName });
 
-    res.status(201).json(pushToken);
+    res.status(201).json(serializePublicPushToken(pushToken));
   } catch (error) {
     next(error);
   }
@@ -31,6 +41,18 @@ export const updatePreferences = async (req: Request, res: Response, next: NextF
 };
 
 export const removeToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { token } = req.body;
+
+    await deletePushTokenByToken(token);
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeTokenById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user!.id;
     const tokenId = req.params.tokenId as string;
@@ -78,7 +100,7 @@ export const simulatePush = async (req: Request, res: Response, next: NextFuncti
       // The mobile app will use this deep link payload to navigate to the article
       const pushData = {
         type: 'article',
-        articleId: article.id,
+        postId: article.id,
         url: `retrograde://article/${article.id}`, 
         simulator: true
       };

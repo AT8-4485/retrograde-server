@@ -9,6 +9,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   // Use Prisma's deleteMany for safer cross-database cascading deletes
+  await prisma.notificationDispatch.deleteMany({});
   await prisma.bookmark.deleteMany({});
   await prisma.gameResult.deleteMany({});
   await prisma.pushToken.deleteMany({});

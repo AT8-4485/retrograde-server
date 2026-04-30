@@ -308,23 +308,22 @@ Remove a saved bookmark.
 ## 4. Notifications Endpoints
 
 ### 4.1 Register Push Token
-Register a new device push token for the user (upserts if token already exists).
+Register a new anonymous device push token (upserts if token already exists).
 
 - **Method:** `POST`
 - **Endpoint:** `/v1/notifications/token`
-- **Auth Required:** Yes
+- **Auth Required:** No
 - **Body:**
   ```json
   {
     "token": "string (required)",
-    "platform": "ios | android | web (required)",
+    "platform": "ios | android (required)",
     "deviceName": "string (optional)"
   }
   ```
 - **Example cURL:**
   ```bash
   curl -X POST https://retrograde-server-production.up.railway.app/v1/notifications/token \
-    -H "Authorization: Bearer your_access_token_here" \
     -H "Content-Type: application/json" \
     -d '{
       "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
@@ -332,10 +331,22 @@ Register a new device push token for the user (upserts if token already exists).
       "deviceName": "iPhone 13 Pro"
     }'
   ```
-- **Response (201 Created):** Returns the push token object.
+- **Response (201 Created):**
+  ```json
+  {
+    "id": "string",
+    "token": "string",
+    "platform": "ios | android",
+    "deviceName": "string | null",
+    "createdAt": "date-string",
+    "lastSeenAt": "date-string"
+  }
+  ```
 
 ### 4.2 Update Token Preferences
-Update notification preferences for a specific token.
+Update notification preferences for a specific signed-in user's token.
+
+> Preferences are future-facing for account-based notifications. Notifications V1 uses anonymous device opt-in/out via token registration and deletion.
 
 - **Method:** `PATCH`
 - **Endpoint:** `/v1/notifications/preferences`
@@ -363,13 +374,20 @@ Update notification preferences for a specific token.
 Unregister a device push token.
 
 - **Method:** `DELETE`
-- **Endpoint:** `/v1/notifications/token/:tokenId`
-- **Auth Required:** Yes
-- **URL Parameters:**
-  - `tokenId`: The ID of the token to delete.
+- **Endpoint:** `/v1/notifications/token`
+- **Auth Required:** No
+- **Body:**
+  ```json
+  {
+    "token": "string (required)"
+  }
+  ```
 - **Example cURL:**
   ```bash
-  curl -X DELETE https://retrograde-server-production.up.railway.app/v1/notifications/token/12345 \
-    -H "Authorization: Bearer your_access_token_here"
+  curl -X DELETE https://retrograde-server-production.up.railway.app/v1/notifications/token \
+    -H "Content-Type: application/json" \
+    -d '{
+      "token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+    }'
   ```
 - **Response (204 No Content):** Empty body on success.

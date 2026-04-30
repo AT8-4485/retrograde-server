@@ -8,7 +8,7 @@ if (config_1.config.EXPO_ACCESS_TOKEN) {
     expo = new expo_server_sdk_1.Expo({ accessToken: config_1.config.EXPO_ACCESS_TOKEN });
 }
 else {
-    console.warn('⚠️ EXPO_ACCESS_TOKEN is missing. Push notifications will be simulated.');
+    console.warn('EXPO_ACCESS_TOKEN is missing. Push notifications will be simulated.');
 }
 /**
  * Helper to queue and send push notifications via Expo.
@@ -32,6 +32,10 @@ const sendPushNotification = async (tokens, title, body, data) => {
     }
     if (messages.length === 0)
         return;
+    if (!config_1.config.PUSH_NOTIFICATIONS_ENABLED) {
+        console.log(`[SIMULATED PUSH: disabled] Title: "${title}", Body: "${body}", Targets: ${messages.length}`);
+        return;
+    }
     if (!expo) {
         console.log(`[SIMULATED PUSH] Title: "${title}", Body: "${body}", Targets: ${messages.length}`);
         return;

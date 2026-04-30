@@ -14,8 +14,17 @@ const envSchema = z.object({
   EXPO_ACCESS_TOKEN: z.string().optional(),
   POSTHOG_PROJECT_TOKEN: z.string().optional(),
   POSTHOG_HOST: z.string().url().default("https://us.i.posthog.com"),
+  PUSH_NOTIFICATIONS_ENABLED: z.enum(['true', 'false']).optional().default('false').transform(value => value === 'true'),
   PORT: z.string().optional().default("3000"),
   NODE_ENV: z.enum(['dev', 'test', 'production']).default('dev'),
+}).superRefine((env, ctx) => {
+  if (env.NODE_ENV === 'production' && env.PUSH_NOTIFICATIONS_ENABLED && !env.EXPO_ACCESS_TOKEN) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['EXPO_ACCESS_TOKEN'],
+      message: 'EXPO_ACCESS_TOKEN is required when production push notifications are enabled',
+    });
+  }
 });
 
 export const validateEnv = (env: Record<string, any>) => {

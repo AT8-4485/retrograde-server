@@ -190,8 +190,13 @@ curl -X POST "http://retrograde-server-production.up.railway.app/v1/games/wordle
 curl -X GET "http://localhost:3000/v1/games/wordle/leaderboard?period=daily" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
-run to view db: railway run npx prisma studio --url postgresql://postgres:cDRtqGlYRciuIBgHuGugPTQfixMFtcZf@interchange.proxy.rlwy.net:59928/railway
 
+### View database (Prisma Studio)
+Link the Railway CLI to your project, then run Prisma Studio so `DATABASE_URL` comes from Railway (never commit connection strings):
+
+```bash
+railway run npx prisma studio
+```
 
 ---
 
