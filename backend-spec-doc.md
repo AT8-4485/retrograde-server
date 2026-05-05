@@ -83,7 +83,10 @@ While journalistic content is stored in WordPress, user-specific data must be st
 
 *   **User**: Stores `id` (UUIDv7), `email`, `displayName`, `avatarUrl`, `bio`, and `createdAt`.
 *   **Bookmark**: Tied to a user account. Stores `id`, `type` (article, game, post), `title`, `url`, `thumbnailUrl`, and associated metadata.
-*   **GameResult**: Stores `challengeId`, `userId` (nullable for anonymous play), `score`, `durationMs`, `rank`, and `streak`.
+*   **Game**: Stores `id`, `name`, `description`, `iconUrl`, and `active` status.
+*   **Challenge**: Stores daily puzzles. Includes `id`, `gameId`, `date`, `data` (JSON puzzle structure), and `expiresAt`.
+*   **GameResult**: Stores `id`, `challengeId`, `userId` (nullable for anonymous play), `score`, `durationMs`, `rank`, `percentile`, `answers` (JSON array), and `isPersonalBest`.
+*   **UserGameStats**: Tracks user performance per game (`gamesPlayed`, `bestScore`, `currentStreak`, `maxStreak`, `lastPlayedAt`).
 *   **PushToken**: Links an Expo Push token to a user profile along with their notification preferences (e.g., breaking news, quiet hours).
 
 ## 5. Phase 1 — MVP
@@ -141,14 +144,23 @@ All endpoints live under the versioned base path: `https://api.retrogradenews.ap
 | **Submit Result** | `POST /games/:gameId/today/results` | **Auth:** Public (Auth required only to persist to leaderboard).<br>**Body:** `{ "challengeId": "string", "score": number, "maxScore": number, "durationMs": number, "answers": array }`.<br>**Success (201):** Returns `{ resultId, rank, percentile, streak, isPersonalBest }`. If unauthenticated, `rank`, `streak`, and `isPersonalBest` are null. |
 | **Get Leaderboard** | `GET /games/:gameId/leaderboard` | **Auth:** Public (Auth required only to see `userEntry` in response).<br>**Query Params:** `period` (daily, weekly, alltime), `date`.<br>**Success (200):** Returns paginated data array of top scores and a `userEntry` object for the requesting user. |
 
-### 8.4 AT Protocol Feed Routes
+### 8.4 WordPress Feed Routes
 
 | Endpoint | Method / Path | Details |
 | :--- | :--- | :--- |
-| **Get Feed** | `GET /feed` | **Auth:** Public.<br>**Query Params:** `cursor`, `limit`.<br>**Success (200):** Returns combined chronological feed of editorial staff posts. Proxies the PDS. |
-| **Get Authors** | `GET /feed/authors` | **Auth:** Public.<br>**Success (200):** Returns list of editorial staff whose posts appear in the feed. |
+| **Get Feed** | `GET /feed` | **Auth:** Public.<br>**Query Params:** `cursor`, `limit`.<br>**Success (200):** Returns paginated lean articles from WordPress, excluding issue categories. |
+| **Get By Category** | `GET /feed/category` | **Auth:** Public.<br>**Query Params:** `categories` (comma-separated IDs), `cursor`, `limit`.<br>**Success (200):** Returns paginated lean articles filtered by category IDs. |
+| **Get Issues** | `GET /feed/issues` | **Auth:** Public.<br>**Query Params:** `cursor`, `limit`.<br>**Success (200):** Returns a paginated archive of past issue containers. |
+| **Get Latest Issue** | `GET /feed/issues/latest` | **Auth:** Public.<br>**Success (200):** Orchestrates a dual-fetch returning the latest issue object and its associated articles `{ issue, articles }`. |
 
-### 8.5 Bookmarks Routes
+### 8.5 AT Protocol Feed Routes (Planned)
+
+| Endpoint | Method / Path | Details |
+| :--- | :--- | :--- |
+| **Get Feed** | `GET /proxy/feed` | **Auth:** Public.<br>**Query Params:** `cursor`, `limit`.<br>**Success (200):** Returns combined chronological feed of editorial staff posts. Proxies the PDS. |
+| **Get Authors** | `GET /proxy/feed/authors` | **Auth:** Public.<br>**Success (200):** Returns list of editorial staff whose posts appear in the feed. |
+
+### 8.6 Bookmarks Routes
 
 | Endpoint | Method / Path | Details |
 | :--- | :--- | :--- |
@@ -156,7 +168,7 @@ All endpoints live under the versioned base path: `https://api.retrogradenews.ap
 | **Create Bookmark** | `POST /bookmarks` | **Auth:** Required.<br>**Body:** `{ "type": "string", "title": "string", "url": "string", "thumbnailUrl": "string", "metadata": object }`.<br>**Success (201):** Returns full bookmark object. |
 | **Delete Bookmark** | `DELETE /bookmarks/:bookmarkId` | **Auth:** Required.<br>**Success (204):** No content. |
 
-### 8.6 Push Notifications Routes
+### 8.7 Push Notifications Routes
 
 | Endpoint | Method / Path | Details |
 | :--- | :--- | :--- |
@@ -196,7 +208,11 @@ WORKOS_CLIENT_ID=
 WORDPRESS_API_BASE_URL=
 DATABASE_URL= # For the middleware's user/bookmark DB
 JWT_SECRET=
+JWT_REFRESH_SECRET=
+REDIS_URL=
 EXPO_ACCESS_TOKEN=
+POSTHOG_PROJECT_TOKEN=
+POSTHOG_HOST=
 ```
 
 ## 12. Glossary
