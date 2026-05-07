@@ -1,0 +1,397 @@
+Retrograde Mobile App
+
+Team Name: Team 8
+
+Team Members:
+Leon Zhang
+Faiz Aye
+Ryan Geroge
+Abhishek Haris
+Benjamin Rhee
+Zeke Stephens
+
+Supervisor:
+Professor Sridhar Alagar
+
+Project Coordinator:
+Adarsh Gella
+
+Erik Jonsson School of Engineering and Computer Science
+University of Texas at Dallas
+
+Date: 05/08/2026
+
+
+
+
+
+
+
+
+
+
+
+
+Table of Contents
+
+Executive summary
+1. Introduction
+2. Project Specification & Management
+3. System Architecture & High-Level Design
+4. Implementation & AI Orchestration
+5. System Performance & Validation
+6. Lessons Learned
+7. Conclusion & Future Work
+References
+Acknowledgements
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Executive summary
+High level Overview (½ - 1 page)
+
+Introduction
+
+1.1 Motivation & Problem Statement: A detailed explanation of the specific real-world
+challenge or inefficiency your project aims to resolve, and the motivation behind choosing this specific problem.
+
+1.2 Objectives, Scope, and Goals Achieved: A comprehensive list of the project's intended functionalities, the boundaries of what was built (Scope), and a clear summary of the engineering goals successfully completed during the term.
+
+1.3 Proposed Solution: A detailed explanation of your approach to solving the problem, highlighting how the integrated system functions as a cohesive product to address the identified pain points.
+
+1.4 Key Highlights: A showcase of the project’s most significant breakthroughs, categorized by the technologies utilized and the key findings or results discovered during development.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Project Specification & Management
+
+2.1 The Project Specification (The AI's Blueprint + Link): 
+Our project's master instruction set is governed by `backend-spec-doc.md` and `AGENTS.md`. This specification acts as an "Agent-Ready" blueprint that strictly bounds AI behavior. It defines the headless middleware architecture, data schemas, API routes, and explicitly enforces constraints such as a "Zero-UI Policy", strict Zod environment validation, UUIDv7 standards for primary keys, and mandatory compliance with RFC 9457 (Problem Details for HTTP APIs) for all error handling.
+
+2.2 Maintaining the "Single Source of Truth": 
+To keep the AI agents aligned, we utilized `AGENTS.md` as a living roadmap and checklist. Whenever architectural pivots occurred—such as migrating from `node-cache` to `redis` or adding the new Daily Games Prisma schemas—both `AGENTS.md` and `backend-spec-doc.md` were manually updated. This ensured the AI's context window always reflected the absolute current state of the codebase, preventing hallucinations and preventing agents from referencing deprecated implementation strategies.
+
+2.3 Key Milestones: 
+*   **Foundation & Infrastructure:** Completion of the basic Express/TypeScript scaffolding with strict Zod environment validation and global RFC 9457 error handling.
+*   **Core MVP (The Proxy):** Successful deployment of the WordPress data proxy, which fetches, strips, and paginates raw CMS data into "Lean" articles.
+*   **Authentication & User State:** Implementation of WorkOS Magic Auth (passwordless OTP), allowing users to persist Bookmarks and Push Notification preferences in PostgreSQL.
+*   **Performance Optimization:** Integration of Redis caching with background cache-warming polling to ensure instantaneous feed delivery.
+*   **MVP 2 Expansion:** Deployment of the Daily Games API (challenges, scoring, leaderboards) and full server-side PostHog user analytics integration.
+
+2.4 Team Roles & Leader Rotation: A record of the team leader rotation schedule and a specific breakdown of the technical responsibilities assigned to each member throughout the Project.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+System Architecture & High-Level Design
+
+3.1 System Overview: 
+The solution is a headless Node.js/Express middleware service acting as a secure gateway between a mobile client and external data sources (WordPress, WorkOS). It exposes a versioned REST API (`/v1`). Key endpoints include `GET /v1/feed` (returning paginated, stripped CMS content), `POST /v1/auth/request-otp` (handling passwordless login via WorkOS), and `GET /v1/games/:gameId/leaderboard` (delivering daily challenge results).
+
+3.2 Architecture Diagrams: 
+*   **Data Flow:** Mobile Client requests hit the Express API Gateway. For news content, the server checks the Redis cache; on a cache miss, it queries the external WordPress API, strips out heavy HTML metadata, caches the payload, and returns it to the client. User-specific actions (e.g., Bookmarks, Games) read/write directly to the PostgreSQL database via Prisma.
+*   **Database Schema:** At the core is the `User` entity (UUIDv7). Users have one-to-many relationships with `Session` (for token revocation), `Bookmark`, `PushToken` (for Expo notifications), and `UserGameStats`. A `Game` contains daily `Challenge` entities, and a `GameResult` securely links a `User`'s score and duration to a specific `Challenge`.
+
+3.3 Key Architectural Decisions and Trade-offs: 
+*   **Data Transformation Proxying:** Instead of the mobile client querying the CMS directly, the Node.js middleware intercepts the payload and maps deeply nested CMS data into a "Lean Article" interface. This vastly reduces mobile bandwidth consumption and parse times.
+*   **Redis over In-Memory Caching:** We pivoted from `node-cache` to Redis. While `node-cache` was simpler, Redis allows the Node.js server to scale horizontally across multiple instances without cache fragmentation or redundant CMS querying.
+*   **Stateful JWTs:** We traded the pure statelessness of JWTs for a stateful `Session` table in PostgreSQL. This allows us to instantly revoke compromised devices during a `/v1/auth/logout` event while still utilizing the WorkOS passwordless flow.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Implementation & AI Orchestration
+
+4.1 Technologies Used: 
+*   **Node.js & Express (TypeScript):** Forms the core API gateway and runtime environment.
+*   **Prisma & PostgreSQL:** The ORM and primary relational database storing user profiles, sessions, bookmarks, and game statistics.
+*   **Redis:** The caching layer that intercepts WordPress requests to ensure high-speed feed delivery.
+*   **WorkOS:** Third-party service integrated to handle the delivery and verification of email OTPs for passwordless authentication.
+*   **Zod:** Used heavily for strict runtime validation of both incoming API request bodies and environment variables at startup.
+*   **Expo Server SDK:** Handles formatting and routing push notification payloads to APNs and FCM without managing platform-specific certificates on our backend.
+*   **posthog-node:** Captures server-side user analytics securely, tracking OTP funnels and game interactions.
+
+4.2 AI Build Strategy: 
+The AI orchestration was heavily constrained by a set of system personas defined in `AGENTS.md`. The core mechanism was "The Golden Rule: Approval First," which strictly forbade the AI from modifying code without first presenting a Code Plan. We used explicit prompt logic restrictions such as "Zero-UI Policy" (preventing the AI from generating React or HTML since this is a headless API), "Schema First" (forcing database design discussions prior to logic implementation), and "Import Discipline" (forbidding the assumption of global libraries).
+
+4.3 Human-in-the-Loop Interventions: A log of instances where the team had to
+manually intervene, debug code, override AI-generated logic, or resolve model
+"hallucinations".
+4.4 Codebase: References to your project's GitHub repository, including links to the
+main README.md file and other primary documentation.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+System Performance & Validation
+5.1 Testing and Validation: An overview of the strategies used to verify the code,
+including tools like Postman and testing frameworks.
+5.2 Technical Performance Metrics: Data on system health, such as page load times,
+API latency, and resource utilization.
+5.3 AI Model Performance (if included): Success rates for AI-generated insights and
+natural language parsing accuracy scores.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Lessons Learned
+6.1 Insights Gained: Reflections on key takeaways and the shift from traditional coding
+to AI-orchestrated engineering.
+6.2 Lessons from Challenges: A list of technical "walls" encountered (such as AI
+limitations) and the strategies used to overcome them.
+6.3 Skills Developed: Assessment of how the team's skills in AI engineering,
+teamwork, etc.
+6.4 Individual Reflection: Brief description about personal insights, challenges and
+skills developed (Each member must complete this section)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Conclusion & Future Work
+7.1 Summary of Key Accomplishments: A final reflection on the project’s success in
+meeting its original objectives.
+
+7.2 Future Enhancements: 
+Based on our project roadmap, the next stages for scaling the platform include:
+1.  **PostgreSQL Connection Pooling:** Implementing connection poolers to handle a massive influx of concurrent mobile client connections safely.
+2.  **Third-Party API Proxy Logic:** Building proxy wrappers for external services (like Nebula Labs) to ensure that private API keys are never shipped to the mobile client bundle.
+3.  **AT Protocol Micro-blog Feed:** Integrating a Bluesky PDS proxy endpoint (`/proxy/feed`) to serve a decentralized, chronological feed of editorial staff posts directly to the mobile app.
+
+
+
+
+References
+[List all academic papers, documentation, open-source libraries, and AI tools cited
+throughout the report].
+Acknowledgements
+[Thank professors, mentors, and contributors.]
