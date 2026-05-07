@@ -1,18 +1,19 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth';
-import { registerToken, updatePreferences, removeToken, simulatePush } from '../controllers/notification';
+import { registerToken, updatePreferences, removeToken, removeTokenById, simulatePush } from '../controllers/notification';
 import { ApiError } from '../middleware/errorHandler';
 
 const router = Router();
 
-// Ensure all routes in this router require authentication
-router.use(requireAuth);
-
 const registerTokenBodySchema = z.object({
   token: z.string().min(1, 'Token is required'),
-  platform: z.enum(['ios', 'android', 'web']),
+  platform: z.enum(['ios', 'android']),
   deviceName: z.string().optional(),
+});
+
+const deleteTokenBodySchema = z.object({
+  token: z.string().min(1, 'Token is required'),
 });
 
 const updatePreferencesBodySchema = z.object({
@@ -48,8 +49,9 @@ const simulatePushBodySchema = z.object({
 });
 
 router.post('/token', validateBody(registerTokenBodySchema), registerToken);
-router.patch('/preferences', validateBody(updatePreferencesBodySchema), updatePreferences);
-router.delete('/token/:tokenId', removeToken);
-router.post('/simulate', validateBody(simulatePushBodySchema), simulatePush);
+router.delete('/token', validateBody(deleteTokenBodySchema), removeToken);
+router.patch('/preferences', requireAuth, validateBody(updatePreferencesBodySchema), updatePreferences);
+router.delete('/token/:tokenId', requireAuth, removeTokenById);
+router.post('/simulate', requireAuth, validateBody(simulatePushBodySchema), simulatePush);
 
 export default router;

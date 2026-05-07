@@ -1,16 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.simulatePush = exports.removeToken = exports.updatePreferences = exports.registerToken = void 0;
+exports.simulatePush = exports.removeTokenById = exports.removeToken = exports.updatePreferences = exports.registerToken = void 0;
 const notification_1 = require("../services/notification");
 const expoPush_1 = require("../services/expoPush");
 const wordpress_1 = require("../services/wordpress");
 const errorHandler_1 = require("../middleware/errorHandler");
+const serializePublicPushToken = (pushToken) => ({
+    id: pushToken.id,
+    token: pushToken.token,
+    platform: pushToken.platform,
+    deviceName: pushToken.deviceName,
+    createdAt: pushToken.createdAt,
+    lastSeenAt: pushToken.lastSeenAt,
+});
 const registerToken = async (req, res, next) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user?.id;
         const { token, platform, deviceName } = req.body;
         const pushToken = await (0, notification_1.upsertPushToken)(userId, { token, platform, deviceName });
-        res.status(201).json(pushToken);
+        res.status(201).json(serializePublicPushToken(pushToken));
     }
     catch (error) {
         next(error);
@@ -31,6 +39,17 @@ const updatePreferences = async (req, res, next) => {
 exports.updatePreferences = updatePreferences;
 const removeToken = async (req, res, next) => {
     try {
+        const { token } = req.body;
+        await (0, notification_1.deletePushTokenByToken)(token);
+        res.status(204).send();
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.removeToken = removeToken;
+const removeTokenById = async (req, res, next) => {
+    try {
         const userId = req.user.id;
         const tokenId = req.params.tokenId;
         await (0, notification_1.deletePushToken)(userId, tokenId);
@@ -40,7 +59,7 @@ const removeToken = async (req, res, next) => {
         next(error);
     }
 };
-exports.removeToken = removeToken;
+exports.removeTokenById = removeTokenById;
 const simulatePush = async (req, res, next) => {
     try {
         const userId = req.user.id;
@@ -69,7 +88,7 @@ const simulatePush = async (req, res, next) => {
             // The mobile app will use this deep link payload to navigate to the article
             const pushData = {
                 type: 'article',
-                articleId: article.id,
+                postId: article.id,
                 url: `retrograde://article/${article.id}`,
                 simulator: true
             };
