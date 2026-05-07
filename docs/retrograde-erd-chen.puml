@@ -1,0 +1,124 @@
+@startchen
+left to right direction
+skinparam defaultFontName Courier
+skinparam dpi 180
+
+entity USER {
+  id : String <<key>>
+  email : String <<AK>>
+  displayName : String
+  avatarUrl : String
+  bio : String
+  createdAt : DateTime
+}
+
+entity SESSION {
+  id : String <<key>>
+  jti : String <<AK>>
+  expiresAt : DateTime
+  createdAt : DateTime
+}
+
+entity BOOKMARK {
+  id : String <<key>>
+  type : String
+  bookmarkTitle : String
+  url : String
+  thumbnailUrl : String
+  metadata : String
+  createdAt : DateTime
+}
+
+entity PUSH_TOKEN {
+  id : String <<key>>
+  token : String <<AK>>
+  platform : String
+  deviceName : String
+  preferences : String
+  createdAt : DateTime
+}
+
+entity GAME {
+  id : String <<key>>
+  name : String
+  description : String
+  iconUrl : String
+  active : Boolean
+}
+
+entity CHALLENGE {
+  id : String <<key>>
+  date : DateTime <<AK>>
+  data : Json
+  expiresAt : DateTime
+}
+
+entity GAME_RESULT {
+  id : String <<key>>
+  score : Int
+  maxScore : Int
+  durationMs : Int
+  answers : Json
+  rank : Int
+  percentile : Float
+  isPersonalBest : Boolean
+  createdAt : DateTime
+}
+
+entity USER_GAME_STATS <<weak>> {
+  userId : String <<key>>
+  gameId : String <<key>>
+  gamesPlayed : Int
+  bestScore : Int
+  totalDurationMs : BigInt
+  currentStreak : Int
+  maxStreak : Int
+  lastPlayedAt : DateTime
+}
+
+relationship HAS_SESSION {
+}
+HAS_SESSION -(0,N)- USER
+HAS_SESSION =(1,1)= SESSION
+
+relationship SAVES {
+}
+SAVES -(0,N)- USER
+SAVES =(1,1)= BOOKMARK
+
+relationship REGISTERS {
+}
+REGISTERS -(0,N)- USER
+REGISTERS =(1,1)= PUSH_TOKEN
+
+relationship OFFERS {
+}
+OFFERS -(0,N)- GAME
+OFFERS =(1,1)= CHALLENGE
+
+relationship PRODUCES {
+}
+PRODUCES -(0,N)- CHALLENGE
+PRODUCES =(1,1)= GAME_RESULT
+
+relationship ATTEMPTS {
+}
+ATTEMPTS -(0,N)- USER
+ATTEMPTS -(0,1)- GAME_RESULT
+
+relationship RECORDS {
+}
+RECORDS -(0,N)- GAME
+RECORDS -(0,1)- GAME_RESULT
+
+relationship SUMMARIZES_USER {
+}
+SUMMARIZES_USER -(0,N)- USER
+SUMMARIZES_USER =(1,1)= USER_GAME_STATS
+
+relationship SUMMARIZES_GAME {
+}
+SUMMARIZES_GAME -(0,N)- GAME
+SUMMARIZES_GAME =(1,1)= USER_GAME_STATS
+
+@endchen

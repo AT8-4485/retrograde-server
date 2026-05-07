@@ -370,8 +370,8 @@ Update notification preferences for a specific signed-in user's token.
   ```
 - **Response (200 OK):** Returns the updated token object.
 
-### 4.3 Remove Push Token
-Unregister a device push token.
+### 4.3 Remove Push Token by Value
+Unregister a device push token by token value.
 
 - **Method:** `DELETE`
 - **Endpoint:** `/v1/notifications/token`
@@ -391,3 +391,145 @@ Unregister a device push token.
     }'
   ```
 - **Response (204 No Content):** Empty body on success.
+
+### 4.4 Remove Push Token by ID
+Unregister a signed-in user's device push token by ID.
+
+- **Method:** `DELETE`
+- **Endpoint:** `/v1/notifications/token/:tokenId`
+- **Auth Required:** Yes
+- **URL Parameters:**
+  - `tokenId`: The ID of the token to delete.
+- **Response (204 No Content):** Empty body on success.
+
+---
+
+## 5. Games Endpoints
+
+### 5.1 List Games
+Get a list of all active games.
+
+- **Method:** `GET`
+- **Endpoint:** `/v1/games`
+- **Auth Required:** No
+- **Example cURL:**
+  ```bash
+  curl -X GET "https://retrograde-server-production.up.railway.app/v1/games"
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "data": [
+      {
+        "id": "string",
+        "name": "string",
+        "description": "string | null",
+        "iconUrl": "string | null",
+        "active": true
+      }
+    ]
+  }
+  ```
+
+### 5.2 Get Today's Challenge
+Get the daily challenge for a specific game.
+
+- **Method:** `GET`
+- **Endpoint:** `/v1/games/:gameId/challenge/today`
+- **Auth Required:** No
+- **URL Parameters:**
+  - `gameId`: The ID of the game (e.g. `wordle`, `crossword`)
+- **Example cURL:**
+  ```bash
+  curl -X GET "https://retrograde-server-production.up.railway.app/v1/games/wordle/challenge/today"
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "id": "string",
+    "gameId": "string",
+    "date": "date-string",
+    "data": "any (JSON payload for game)",
+    "expiresAt": "date-string | null"
+  }
+  ```
+
+### 5.3 Submit Game Result
+Submit a score/result for a specific game's daily challenge.
+
+- **Method:** `POST`
+- **Endpoint:** `/v1/games/:gameId/results`
+- **Auth Required:** Optional (Required for persisting to user leaderboards and streaks)
+- **URL Parameters:**
+  - `gameId`: The ID of the game.
+- **Body:**
+  ```json
+  {
+    "score": "number (integer, required)",
+    "maxScore": "number (integer, optional)",
+    "durationMs": "number (integer, required, minimum 0)",
+    "answers": "any (optional, JSON data)"
+  }
+  ```
+- **Example cURL:**
+  ```bash
+  curl -X POST https://retrograde-server-production.up.railway.app/v1/games/wordle/results \
+    -H "Content-Type: application/json" \
+    -d '{
+      "score": 5,
+      "maxScore": 6,
+      "durationMs": 120000,
+      "answers": ["hello", "world"]
+    }'
+  ```
+- **Response (201 Created):**
+  ```json
+  {
+    "id": "string",
+    "challengeId": "string",
+    "userId": "string | null",
+    "gameId": "string",
+    "score": "number",
+    "maxScore": "number | null",
+    "durationMs": "number",
+    "answers": "any",
+    "rank": "number",
+    "percentile": "number",
+    "isPersonalBest": "boolean",
+    "createdAt": "date-string"
+  }
+  ```
+
+### 5.4 Get Leaderboard
+Get the leaderboard for a specific game.
+
+- **Method:** `GET`
+- **Endpoint:** `/v1/games/:gameId/leaderboard`
+- **Auth Required:** Optional (Required to return the requesting user's entry separately)
+- **URL Parameters:**
+  - `gameId`: The ID of the game.
+- **Query Parameters:**
+  - `period` (string, optional, default: 'daily'): 'daily', 'weekly', or 'alltime'
+- **Example cURL:**
+  ```bash
+  curl -X GET "https://retrograde-server-production.up.railway.app/v1/games/wordle/leaderboard?period=daily"
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+    "data": [
+      {
+        "id": "string",
+        "score": "number",
+        "durationMs": "number",
+        "user": {
+           "id": "string",
+           "displayName": "string | null",
+           "avatarUrl": "string | null"
+        }
+      }
+    ],
+    "userEntry": "object | null",
+    "hasMore": false
+  }
+  ```

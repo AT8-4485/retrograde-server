@@ -224,10 +224,10 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
 ## Phase 1.7: Cache Warming & Background Polling
 
 - [x] **8.1 Install Cache Library**
-  - [x]  Install `node-cache`.
+  - [x]  Install and configure `redis`.
 
 - [x] **8.2 Create Cache Utility (`src/utils/cache.ts`)**
-  - [x]  Initialize `node-cache` with a standard TTL of 24 hours (86400 seconds). This keeps the RAM clean of obscure, old articles while keeping the main feed incredibly fast.
+  - [x]  Initialize `redis` client with a standard TTL of 24 hours (86400 seconds). This keeps the RAM clean of obscure, old articles while keeping the main feed incredibly fast.
 
 - [x] **8.3 Implement Lazy Loading (`src/services/wordpress.ts`)**
   - [x]  Wrap the main fetch functions (like `fetchFeed`) in a Cache-Aside pattern.
@@ -244,13 +244,23 @@ Refactor the `wordpress.ts` service to support DRY (Don't Repeat Yourself) API c
 
 ## Phase 1.8: Final MVP Validation
 
-- [ ] **9.1 End- [ ] to- [ ] End Integration Test**
-  - [ ]  Simulate: Login - [ ] > Get Feed - [ ] > Bookmark Article - [ ] > Verify Bookmark exists in DB.
+- [x] **9.1 End-to-End Integration Test**
+  - [x]  Simulate: Login -> Get Feed -> Bookmark Article -> Verify Bookmark exists in DB.
 
-- [ ] **9.2 API Documentation Check**
-  - [ ]  Ensure all Phase 1 endpoints match the 8.0 API Reference in the spec exactly.
+- [x] **9.2 API Documentation Check**
+  - [x]  Ensure all Phase 1 endpoints match the 8.0 API Reference in the spec exactly.
 
-## MVP 2
+## Phase 2.0: Stretch Goals Completed
 
-- [ ] Redis implementation over node-cache
-- [ ] Postgress connection pooling
+- [x] **10.1 Redis Implementation**
+  - [x] Migrated caching from `node-cache` to `redis` to support multi-instance deployment.
+
+- [x] **10.2 Daily Games API**
+  - [x] Schema: Added Prisma models for `Game`, `Challenge`, `GameResult`, and `UserGameStats`.
+  - [x] Services: Implemented `src/services/game.ts` to calculate scores, percentiles, personal bests, and daily streaks.
+  - [x] Routes: Added `GET /v1/games`, `GET /v1/games/:gameId/today`, `POST /v1/games/:gameId/today/results`, and `GET /v1/games/:gameId/leaderboard`.
+
+- [x] **10.3 User Analytics (PostHog)**
+  - [x] Setup: Installed `posthog-node` and configured singleton client in `src/utils/posthog.ts`.
+  - [x] Auth Instrumentation: Added tracking for OTP requests and Sign in flows in `src/controllers/auth.ts`, safely aliasing anonymous IDs from the mobile app to canonical `user.id`.
+  - [x] Game Instrumentation: Added tracking for game result submissions in `src/controllers/game.ts`.

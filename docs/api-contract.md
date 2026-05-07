@@ -2,8 +2,8 @@
 
 > **Version:** 0.1.0-draft
 > **Last Updated:** 2026-02-18
-> **Status:** Proposal — not yet implemented
-> **Authors:** Zeke Stephens
+> **Status:** Final API Specification
+> **Authors:** Zeke Stephens & AI Assistants
 
 ---
 
@@ -15,11 +15,11 @@ This document defines the HTTP JSON API contract between the **Retrograde News m
 
 - Authenticates users via a passwordless email one-time-code (OTC) flow.
 - Hosts daily interactive games with social features (leaderboards, streaks).
-- Serves an editorial AT Protocol (Bluesky) micro-blog feed (read-only for all users).
+- Serves an editorial AT Protocol (Bluesky) micro-blog feed (currently planned, not implemented).
 - Manages per-user bookmarks.
 - Delivers push notifications via Expo Push / FCM / APNs.
-- Collects lightweight, privacy-respecting analytics events.
-- Proxies third-party services (weather, air quality, etc.) to avoid shipping API keys to the client.
+- Collects lightweight, privacy-respecting analytics events via PostHog.
+- Proxies WordPress CMS content, stripping heavy web metadata to serve mobile-optimized JSON.
 
 > **Design principle:** The app should be fully usable without an account. Only bookmarks and personal leaderboard entries require authentication.
 
@@ -90,7 +90,7 @@ A passwordless flow based on email one-time codes. No passwords are ever stored.
 ### 3.1 Request a One-Time Code
 
 ```
-POST /v1/auth/otp
+POST /v1/auth/request-otp
 ```
 
 **Request Body**
@@ -115,7 +115,7 @@ POST /v1/auth/otp
 ### 3.2 Verify Code & Obtain Tokens
 
 ```
-POST /v1/auth/verify
+POST /v1/auth/verify-otp
 ```
 
 **Request Body**
@@ -371,7 +371,7 @@ GET /v1/games/:gameId/leaderboard?period=daily&date=2026-02-18&limit=25
 
 ---
 
-## 6 AT Protocol Micro-Blog Feed
+## 6 AT Protocol Micro-Blog Feed (Planned)
 
 A **read-only**, publicly accessible editorial micro-blog powered by AT Protocol.
 
@@ -391,7 +391,7 @@ The middleware's role is simply to **proxy and merge** multiple author feeds fro
 ### 6.1 Get Feed
 
 ```
-GET /v1/feed?cursor=...&limit=25
+GET /v1/proxy/feed?cursor=...&limit=25
 ```
 
 **Response `200 OK`**
@@ -427,7 +427,7 @@ GET /v1/feed?cursor=...&limit=25
 Returns the list of editorial staff whose posts appear in the feed.
 
 ```
-GET /v1/feed/authors
+GET /v1/proxy/feed/authors
 ```
 
 **Response `200 OK`**
@@ -443,6 +443,83 @@ GET /v1/feed/authors
       "role": "editor",
       "bio": "Senior editor covering city government."
     }
+  ]
+}
+```
+
+---
+
+## 6.5 WordPress Proxy Feed
+
+A paginated REST proxy for Retrograde's main editorial content, optimized for mobile consumption by stripping away heavy WordPress metadata.
+
+### 6.5.1 Get Main Feed
+
+```
+GET /v1/feed?cursor=1&limit=10
+```
+
+**Response `200 OK`**
+
+```json
+{
+  "data": [
+    {
+      "id": "12345",
+      "title": "City Approves Transit Expansion",
+      "excerpt": "<p>A new transit plan was approved today.</p>",
+      "content": "<p>Full article content here...</p>",
+      "thumbnailUrl": "https://cdn.retrogradenews.app/thumbs/12345.jpg",
+      "authorName": "Jane Reporter",
+      "publishedAt": "2026-02-18T18:00:00Z",
+      "modifiedAt": "2026-02-18T18:30:00Z",
+      "categories": ["News", "Local"]
+    }
+  ],
+  "cursor": "2",
+  "hasMore": true
+}
+```
+
+### 6.5.2 Get Feed by Category
+
+```
+GET /v1/feed/category?categories=1363,1469&cursor=1&limit=10
+```
+
+**Response `200 OK`** — same shape as §6.5.1
+
+### 6.5.3 Get Issues
+
+```
+GET /v1/feed/issues?cursor=1&limit=10
+```
+
+**Response `200 OK`** — same shape as §6.5.1
+
+### 6.5.4 Get Latest Issue
+
+```
+GET /v1/feed/issues/latest
+```
+
+**Response `200 OK`**
+
+```json
+{
+  "issue": {
+    "id": "23456",
+    "title": "February 2026 Issue",
+    "excerpt": "<p>Welcome to this month's issue.</p>",
+    "content": "<p>Full issue text...</p>",
+    "thumbnailUrl": "https://cdn.retrogradenews.app/thumbs/issue_feb26.jpg",
+    "authorName": "Editorial Board",
+    "publishedAt": "2026-02-18T00:00:00Z",
+    "modifiedAt": "2026-02-18T00:00:00Z",
+    "categories": ["Issue"]
+  },
+  "articles": [
+    /* Array of LeanArticle objects published on the same day as the issue */
   ]
 }
 ```
@@ -523,49 +600,9 @@ DELETE /v1/bookmarks/:bookmarkId
 
 ## 8 Analytics
 
-Lightweight, privacy-respecting event collection. No PII is stored in events; all are associated with an anonymous device fingerprint plus an optional user ID.
+Analytics are collected securely via `posthog-node` entirely on the server side to protect user privacy. Client applications do not submit events directly to a `/v1/analytics/events` endpoint.
 
-### 8.1 Submit Events (Batch)
-
-```
-POST /v1/analytics/events
-```
-
-**Request Body**
-
-```json
-{
-  "deviceId": "dev_A1B2C3D4",
-  "events": [
-    {
-      "name": "screen_view",
-      "timestamp": "2026-02-18T21:50:00Z",
-      "properties": {
-        "screen": "HomeScreen",
-        "sessionDurationMs": 45000
-      }
-    },
-    {
-      "name": "article_read",
-      "timestamp": "2026-02-18T21:51:30Z",
-      "properties": {
-        "articleUrl": "https://example.com/transit-expansion",
-        "readDurationMs": 12000,
-        "scrollDepthPct": 85
-      }
-    }
-  ]
-}
-```
-
-**Response `202 Accepted`**
-
-```json
-{
-  "accepted": 2,
-  "dropped": 0
-}
-```
+Instead, the client passes `x-posthog-distinct-id` and `x-posthog-session-id` headers during existing requests (e.g. `/v1/auth/request-otp`, `/v1/auth/verify-otp`, `/v1/games/:gameId/results`). The middleware intercepts these and constructs analytics events server-side.
 
 ---
 
